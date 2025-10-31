@@ -9,9 +9,9 @@ version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/joelington321/HaskTreeView#readme>
 homepage:       https://github.com/joelington321/HaskTreeView#readme
 bug-reports:    https://github.com/joelington321/HaskTreeView/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2023 Author name here
+author:         Joelington de Almeida Bernardo
+maintainer:     joelington321@gmail.com
+copyright:      2025 Joelington de Almeida Bernardo
 license:        BSD3
 build-type:     Simple
 extra-source-files:
