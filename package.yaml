@@ -1,0 +1,40 @@
+name:                HaskTreeView
+version:             0.1.0.0
+github:              "joelington321/HaskTreeView"
+license:             BSD3
+author:              "Joelington de Almeida Bernardo"
+maintainer:          "joelington321@gmail.com"
+copyright:           "2025 Joelington de Almeida Bernardo"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README on GitHub at <https://github.com/joelington321/HaskTreeView#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+
+executables:
+  HaskTreeView-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - HaskTreeView
+
+tests:
+  HaskTreeView-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - HaskTreeView

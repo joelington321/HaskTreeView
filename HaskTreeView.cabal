@@ -1,0 +1,58 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           HaskTreeView
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/joelington321/HaskTreeView#readme>
+homepage:       https://github.com/joelington321/HaskTreeView#readme
+bug-reports:    https://github.com/joelington321/HaskTreeView/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2023 Author name here
+license:        BSD3
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/joelington321/HaskTreeView
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_HaskTreeView
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable HaskTreeView-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_HaskTreeView
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HaskTreeView
+    , base >=4.7 && <5
+  default-language: Haskell2010
+
+test-suite HaskTreeView-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_HaskTreeView
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HaskTreeView
+    , base >=4.7 && <5
+  default-language: Haskell2010
