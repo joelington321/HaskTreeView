@@ -1,3 +1,9 @@
+/**
+ * ARQUIVO FICTÍCIO PARA TESTE
+ * Este é um arquivo de exemplo usado apenas para testar o analisador Haskell.
+ * Não representa um projeto real.
+ */
+
 import React from 'react';
 import { View, Text } from 'react-native';
 import { styles } from './styles';
