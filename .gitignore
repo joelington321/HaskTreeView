@@ -1,0 +1,37 @@
+# Arquivos gerados pelo Stack/Cabal
+.stack-work/
+dist/
+dist-newstyle/
+cabal.project.local
+cabal.project.local~
+
+# Arquivos gerados pelo GHC
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
+*.prof
+
+# Arquivos temporários do editor
+*~
+.#*
+\#*\#
+*.swp
+*.swo
+
+# Arquivos de configuração local
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Arquivos de saída
+*.exe
+*.dmg
