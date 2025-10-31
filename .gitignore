@@ -4,6 +4,7 @@ dist/
 dist-newstyle/
 cabal.project.local
 cabal.project.local~
+stack.yaml.lock
 
 # Arquivos gerados pelo GHC
 *.hi
