@@ -267,6 +267,36 @@
         const HORIZONTAL_SPACING = 200;
         const COMPONENT_SPACING = 250; // Espaço entre árvores desconexas
 
+        // Função auxiliar para aplicar opacidade a cores hex
+        function applyOpacity(color, opacity) {
+            // Se já é rgba, ajustar opacidade
+            if (color.startsWith('rgba')) {
+                return color.replace(/[\d.]+\)$/g, opacity + ')');
+            }
+            // Se é rgb, converter para rgba
+            if (color.startsWith('rgb')) {
+                return color.replace('rgb', 'rgba').replace(')', ', ' + opacity + ')');
+            }
+            // Converter hex para rgba
+            if (color.startsWith('#')) {
+                const hex = color.replace('#', '');
+                let r, g, b;
+                
+                if (hex.length === 3) {
+                    r = parseInt(hex[0] + hex[0], 16);
+                    g = parseInt(hex[1] + hex[1], 16);
+                    b = parseInt(hex[2] + hex[2], 16);
+                } else {
+                    r = parseInt(hex.substr(0, 2), 16);
+                    g = parseInt(hex.substr(2, 2), 16);
+                    b = parseInt(hex.substr(4, 2), 16);
+                }
+                
+                return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            }
+            return color;
+        }
+
         // Inicializar canvas
         function initCanvas() {
             canvas.width = canvas.parentElement.clientWidth;
@@ -716,11 +746,43 @@
                 drawComponentBoundaries();
             }
 
+            // Detectar nó sob hover e seus nós/arestas relacionados
+            const hoveredNode = nodes.find(n => n.hover);
+            let highlightedNodes = new Set();
+            let highlightedConnections = new Set();
+            
+            if (hoveredNode) {
+                // Adicionar o próprio nó
+                highlightedNodes.add(hoveredNode.id);
+                
+                // Adicionar nós e conexões de importações (saídas)
+                hoveredNode.imports.forEach(importId => {
+                    highlightedNodes.add(importId);
+                });
+                
+                // Adicionar nós e conexões de importedBy (entradas)
+                hoveredNode.importedBy.forEach(importedById => {
+                    highlightedNodes.add(importedById);
+                });
+                
+                // Marcar conexões relevantes
+                connections.forEach((conn, index) => {
+                    if ((conn.from.id === hoveredNode.id) || (conn.to.id === hoveredNode.id)) {
+                        highlightedConnections.add(index);
+                    }
+                });
+            }
+
             // Desenhar conexões com setas
-            connections.forEach(conn => {
+            connections.forEach((conn, index) => {
+                // Determinar opacidade baseado no hover
+                const shouldHighlight = !hoveredNode || highlightedConnections.has(index);
+                const opacity = shouldHighlight ? 1.0 : 0.5;
+                
                 // Usar cor vermelha se a conexão for circular
-                ctx.strokeStyle = conn.isCircular ? LINE_CIRCULAR_COLOR : LINE_COLOR;
-                ctx.fillStyle = conn.isCircular ? LINE_CIRCULAR_COLOR : LINE_COLOR;
+                const baseColor = conn.isCircular ? LINE_CIRCULAR_COLOR : LINE_COLOR;
+                ctx.strokeStyle = applyOpacity(baseColor, opacity);
+                ctx.fillStyle = applyOpacity(baseColor, opacity);
                 
                 const fromX = conn.from.x;
                 const fromY = conn.from.y;
@@ -828,6 +890,10 @@
 
             // Desenhar nós
             nodes.forEach(node => {
+                // Determinar opacidade baseado no hover
+                const shouldHighlight = !hoveredNode || highlightedNodes.has(node.id);
+                const opacity = shouldHighlight ? 1.0 : 0.5;
+                
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, NODE_RADIUS, 0, Math.PI * 2);
                 
@@ -841,14 +907,15 @@
                     fillColor = NODE_COLOR;
                 }
                 
-                ctx.fillStyle = fillColor;
+                ctx.fillStyle = applyOpacity(fillColor, opacity);
                 ctx.fill();
-                ctx.strokeStyle = '#000';
+                ctx.strokeStyle = applyOpacity('#000', opacity);
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
                 // Desenhar texto do arquivo
-                ctx.fillStyle = node.isCircular ? NODE_CIRCULAR_COLOR : '#fff';
+                const textColor = node.isCircular ? NODE_CIRCULAR_COLOR : '#fff';
+                ctx.fillStyle = applyOpacity(textColor, opacity);
                 ctx.font = '12px monospace';
                 ctx.textAlign = 'center';
                 const fileName = node.filePath.split(/[\/\\]/).pop();
