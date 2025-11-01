@@ -1,0 +1,57 @@
+{
+  "projectName": "deep-hierarchy",
+  "analyzedAt": "2025-11-01T15:30:00Z",
+  "fileRegistry": {
+    "0": "C:\\Projects\\deep-hierarchy",
+    "1": "index.ts",
+    "2": "level1/module.ts",
+    "3": "level2/service.ts",
+    "4": "level3/handler.ts",
+    "5": "level4/processor.ts",
+    "6": "level5/validator.ts",
+    "7": "level6/formatter.ts",
+    "8": "level7/utils.ts"
+  },
+  "dependencies": [
+    {
+      "fileId": "1",
+      "imports": ["2"],
+      "importedBy": []
+    },
+    {
+      "fileId": "2",
+      "imports": ["3"],
+      "importedBy": ["1"]
+    },
+    {
+      "fileId": "3",
+      "imports": ["4"],
+      "importedBy": ["2"]
+    },
+    {
+      "fileId": "4",
+      "imports": ["5"],
+      "importedBy": ["3"]
+    },
+    {
+      "fileId": "5",
+      "imports": ["6"],
+      "importedBy": ["4"]
+    },
+    {
+      "fileId": "6",
+      "imports": ["7"],
+      "importedBy": ["5"]
+    },
+    {
+      "fileId": "7",
+      "imports": ["8"],
+      "importedBy": ["6"]
+    },
+    {
+      "fileId": "8",
+      "imports": [],
+      "importedBy": ["7"]
+    }
+  ]
+}

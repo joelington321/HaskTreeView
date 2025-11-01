@@ -1,0 +1,33 @@
+{
+  "projectName": "circular-dependencies-test",
+  "analyzedAt": "2025-11-01T15:30:00Z",
+  "fileRegistry": {
+    "0": "C:\\Projects\\circular-test",
+    "1": "ComponentA.tsx",
+    "2": "ComponentB.tsx",
+    "3": "ComponentC.tsx",
+    "4": "ComponentC.tsx"
+  },
+  "dependencies": [
+    {
+      "fileId": "1",
+      "imports": ["2","4"],
+      "importedBy": ["3"]
+    },
+    {
+      "fileId": "2",
+      "imports": ["3"],
+      "importedBy": ["4"]
+    },
+    {
+      "fileId": "3",
+      "imports": ["4"],
+      "importedBy": ["1"]
+    },
+    {
+      "fileId": "4",
+      "imports": ["1"],
+      "importedBy": ["2"]
+    }
+  ]
+}
