@@ -265,13 +265,24 @@
         const LINE_WIDTH = 2;
         const VERTICAL_SPACING = 150;
         const HORIZONTAL_SPACING = 200;
+        const COMPONENT_SPACING = 250; // Espaço entre árvores desconexas
 
         // Inicializar canvas
         function initCanvas() {
             canvas.width = canvas.parentElement.clientWidth;
             canvas.height = canvas.parentElement.clientHeight;
-            offsetX = canvas.width / 2;
-            offsetY = 100;
+            
+            // Se temos dados, calcular offset baseado no layout
+            if (nodes.length > 0) {
+                const minX = Math.min(...nodes.map(n => n.x));
+                const maxX = Math.max(...nodes.map(n => n.x));
+                const centerX = (minX + maxX) / 2;
+                offsetX = canvas.width / 2 - centerX;
+                offsetY = 100;
+            } else {
+                offsetX = canvas.width / 2;
+                offsetY = 100;
+            }
         }
 
         // Carregar JSON do input
@@ -283,6 +294,7 @@
                     try {
                         data = JSON.parse(event.target.result);
                         processData();
+                        initCanvas(); // Recentralizar após carregar dados
                         draw();
                     } catch (error) {
                         alert('Erro ao carregar JSON: ' + error.message);
@@ -299,8 +311,9 @@
                 .then(jsonData => {
                     data = jsonData;
                     processData();
+                    initCanvas(); // Recentralizar após carregar dados
                     draw();
-                })
+                })  
                 .catch(error => {
                     alert('Erro ao carregar JSON padrão: ' + error.message);
                 });
@@ -550,68 +563,92 @@
                     });
                 });
             } else {
-                // Layout hierárquico normal
-                const rootNodes = data.dependencies.filter(dep => dep.importedBy.length === 0);
-                const depthMap = {};
-                const queue = rootNodes.length > 0 ? 
-                    rootNodes.map(node => ({ id: node.fileId, depth: 0, path: [] })) :
-                    [{ id: data.dependencies[0].fileId, depth: 0, path: [] }];
+                // Layout hierárquico com separação de componentes
+                let componentOffsetX = 0;
+                
+                // Processar cada componente separadamente
+                connectedComponents.forEach((component, componentIndex) => {
+                    const componentDeps = data.dependencies.filter(dep => component.includes(dep.fileId));
+                    
+                    // Calcular profundidade para este componente
+                    const rootNodes = componentDeps.filter(dep => dep.importedBy.length === 0 || 
+                        dep.importedBy.every(id => !component.includes(id)));
+                    const depthMap = {};
+                    const queue = rootNodes.length > 0 ? 
+                        rootNodes.map(node => ({ id: node.fileId, depth: 0, path: [] })) :
+                        [{ id: componentDeps[0].fileId, depth: 0, path: [] }];
 
-                while (queue.length > 0) {
-                    const { id, depth, path } = queue.shift();
-                    
-                    if (depthMap[id] !== undefined && depthMap[id] <= depth) {
-                        continue;
-                    }
-                    
-                    if (path.includes(id)) {
-                        if (depthMap[id] === undefined) {
-                            depthMap[id] = depth;
+                    while (queue.length > 0) {
+                        const { id, depth, path } = queue.shift();
+                        
+                        if (depthMap[id] !== undefined && depthMap[id] <= depth) {
+                            continue;
                         }
-                        continue;
+                        
+                        if (path.includes(id)) {
+                            if (depthMap[id] === undefined) {
+                                depthMap[id] = depth;
+                            }
+                            continue;
+                        }
+
+                        depthMap[id] = depth;
+
+                        const node = componentDeps.find(d => d.fileId === id);
+                        if (node) {
+                            const newPath = [...path, id];
+                            node.imports.forEach(importId => {
+                                if (component.includes(importId)) {
+                                    queue.push({ id: importId, depth: depth + 1, path: newPath });
+                                }
+                            });
+                        }
                     }
 
-                    depthMap[id] = depth;
+                    componentDeps.forEach(dep => {
+                        if (depthMap[dep.fileId] === undefined) {
+                            depthMap[dep.fileId] = 0;
+                        }
+                    });
 
-                    const node = data.dependencies.find(d => d.fileId === id);
-                    if (node) {
-                        const newPath = [...path, id];
-                        node.imports.forEach(importId => {
-                            queue.push({ id: importId, depth: depth + 1, path: newPath });
-                        });
-                    }
-                }
+                    // Agrupar por profundidade
+                    const nodesByDepth = {};
+                    componentDeps.forEach(dep => {
+                        const depth = depthMap[dep.fileId];
+                        if (!nodesByDepth[depth]) nodesByDepth[depth] = [];
+                        nodesByDepth[depth].push(dep);
+                    });
 
-                data.dependencies.forEach(dep => {
-                    if (depthMap[dep.fileId] === undefined) {
-                        depthMap[dep.fileId] = 0;
-                    }
-                });
+                    // Calcular largura máxima deste componente
+                    let maxWidth = 0;
+                    Object.values(nodesByDepth).forEach(nodesAtDepth => {
+                        const width = (nodesAtDepth.length - 1) * HORIZONTAL_SPACING;
+                        maxWidth = Math.max(maxWidth, width);
+                    });
 
-                const nodesByDepth = {};
-                data.dependencies.forEach(dep => {
-                    const depth = depthMap[dep.fileId];
-                    if (!nodesByDepth[depth]) nodesByDepth[depth] = [];
-                    nodesByDepth[depth].push(dep);
-                });
+                    // Posicionar nós deste componente
+                    Object.keys(nodesByDepth).sort((a, b) => Number(a) - Number(b)).forEach(depth => {
+                        const nodesAtDepth = nodesByDepth[depth];
+                        const totalWidth = (nodesAtDepth.length - 1) * HORIZONTAL_SPACING;
+                        const startX = componentOffsetX - totalWidth / 2;
 
-                Object.keys(nodesByDepth).sort((a, b) => Number(a) - Number(b)).forEach(depth => {
-                    const nodesAtDepth = nodesByDepth[depth];
-                    const totalWidth = (nodesAtDepth.length - 1) * HORIZONTAL_SPACING;
-                    const startX = -totalWidth / 2;
-
-                    nodesAtDepth.forEach((dep, index) => {
-                        const filePath = data.fileRegistry[dep.fileId] || dep.fileId;
-                        nodes.push({
-                            id: dep.fileId,
-                            x: startX + index * HORIZONTAL_SPACING,
-                            y: Number(depth) * VERTICAL_SPACING,
-                            filePath: filePath,
-                            imports: dep.imports,
-                            importedBy: dep.importedBy,
-                            isCircular: nodesInCycles.has(dep.fileId) // Marcar se está em ciclo
+                        nodesAtDepth.forEach((dep, index) => {
+                            const filePath = data.fileRegistry[dep.fileId] || dep.fileId;
+                            nodes.push({
+                                id: dep.fileId,
+                                x: startX + index * HORIZONTAL_SPACING,
+                                y: Number(depth) * VERTICAL_SPACING,
+                                filePath: filePath,
+                                imports: dep.imports,
+                                importedBy: dep.importedBy,
+                                isCircular: nodesInCycles.has(dep.fileId), // Marcar se está em ciclo
+                                componentIndex: componentIndex // Marcar o índice do componente
+                            });
                         });
                     });
+
+                    // Avançar offset para o próximo componente
+                    componentOffsetX += maxWidth + COMPONENT_SPACING;
                 });
             }
 

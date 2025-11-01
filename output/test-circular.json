@@ -6,9 +6,18 @@
     "1": "ComponentA.tsx",
     "2": "ComponentB.tsx",
     "3": "ComponentC.tsx",
-    "4": "ComponentC.tsx"
+    "4": "ComponentC.tsx",
+    "5": "ComponentD.tsx",
+    "6": "ComponentE.tsx",
+    "7": "ComponentF.tsx"
   },
   "dependencies": [
+  {
+      "fileId": "5",
+      "imports": ["1"],
+      "importedBy": []
+    },
+
     {
       "fileId": "1",
       "imports": ["2","4"],
@@ -28,6 +37,12 @@
       "fileId": "4",
       "imports": ["1"],
       "importedBy": ["2"]
+    },
+    {
+      "fileId": "6",
+      "imports": ["7"],
+      "importedBy": []
     }
+    
   ]
 }
