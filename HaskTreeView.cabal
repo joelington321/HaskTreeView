@@ -23,6 +23,8 @@ source-repository head
 
 library
   exposed-modules:
+      Config
+      FileFilter
       Lib
   other-modules:
       Paths_HaskTreeView
@@ -30,6 +32,9 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , containers
+    , directory
+    , filepath
   default-language: Haskell2010
 
 executable HaskTreeView-exe
@@ -42,6 +47,9 @@ executable HaskTreeView-exe
   build-depends:
       HaskTreeView
     , base >=4.7 && <5
+    , containers
+    , directory
+    , filepath
   default-language: Haskell2010
 
 test-suite HaskTreeView-test
@@ -55,4 +63,7 @@ test-suite HaskTreeView-test
   build-depends:
       HaskTreeView
     , base >=4.7 && <5
+    , containers
+    , directory
+    , filepath
   default-language: Haskell2010
