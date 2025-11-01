@@ -239,6 +239,45 @@
                 });
         }
 
+        // Detectar ciclos no grafo
+        function detectCycles() {
+            const cycles = [];
+            const visited = new Set();
+            const recursionStack = new Set();
+            
+            function dfs(nodeId, path) {
+                if (recursionStack.has(nodeId)) {
+                    // Encontrou um ciclo
+                    const cycleStart = path.indexOf(nodeId);
+                    const cycle = path.slice(cycleStart);
+                    cycles.push(cycle);
+                    return;
+                }
+                
+                if (visited.has(nodeId)) return;
+                
+                visited.add(nodeId);
+                recursionStack.add(nodeId);
+                
+                const node = data.dependencies.find(d => d.fileId === nodeId);
+                if (node) {
+                    node.imports.forEach(importId => {
+                        dfs(importId, [...path, nodeId]);
+                    });
+                }
+                
+                recursionStack.delete(nodeId);
+            }
+            
+            data.dependencies.forEach(dep => {
+                if (!visited.has(dep.fileId)) {
+                    dfs(dep.fileId, []);
+                }
+            });
+            
+            return cycles;
+        }
+
         // Processar dados do JSON
         function processData() {
             if (!data) return;
@@ -251,72 +290,144 @@
             document.getElementById('stat-files').textContent = data.dependencies.length;
             document.getElementById('stat-date').textContent = data.analyzedAt || '-';
 
-            // Identificar nós raiz (sem importedBy)
-            const rootNodes = data.dependencies.filter(dep => dep.importedBy.length === 0);
-            const processedNodes = new Set();
+            // Detectar ciclos
+            const cycles = detectCycles();
+            const nodesInCycles = new Set();
+            cycles.forEach(cycle => cycle.forEach(nodeId => nodesInCycles.add(nodeId)));
+            
+            console.log('Ciclos detectados:', cycles);
 
-            // Calcular profundidade de cada nó
-            const depthMap = {};
-            const queue = rootNodes.map(node => ({ id: node.fileId, depth: 0 }));
-
-            while (queue.length > 0) {
-                const { id, depth } = queue.shift();
-                if (processedNodes.has(id)) continue;
-
-                processedNodes.add(id);
-                depthMap[id] = depth;
-
-                const node = data.dependencies.find(d => d.fileId === id);
-                if (node) {
-                    node.imports.forEach(importId => {
-                        if (!processedNodes.has(importId)) {
-                            queue.push({ id: importId, depth: depth + 1 });
-                        }
-                    });
-                }
-            }
-
-            // Organizar nós por profundidade
-            const nodesByDepth = {};
-            data.dependencies.forEach(dep => {
-                const depth = depthMap[dep.fileId] || 0;
-                if (!nodesByDepth[depth]) nodesByDepth[depth] = [];
-                nodesByDepth[depth].push(dep);
-            });
-
-            // Posicionar nós
-            Object.keys(nodesByDepth).forEach(depth => {
-                const nodesAtDepth = nodesByDepth[depth];
-                const totalWidth = (nodesAtDepth.length - 1) * HORIZONTAL_SPACING;
-                const startX = -totalWidth / 2;
-
-                nodesAtDepth.forEach((dep, index) => {
-                    const filePath = data.fileRegistry[dep.fileId] || dep.fileId;
+            // Se todos os nós estão em um ciclo, usar layout circular
+            if (nodesInCycles.size === data.dependencies.length && cycles.length > 0) {
+                console.log('Usando layout circular para ciclo completo');
+                const cycle = cycles[0]; // Usar o primeiro ciclo detectado
+                const radius = 150;
+                const angleStep = (2 * Math.PI) / cycle.length;
+                
+                cycle.forEach((nodeId, index) => {
+                    const angle = -Math.PI / 2 + index * angleStep; // Começar no topo
+                    const dep = data.dependencies.find(d => d.fileId === nodeId);
+                    const filePath = data.fileRegistry[nodeId] || nodeId;
+                    
                     nodes.push({
-                        id: dep.fileId,
-                        x: startX + index * HORIZONTAL_SPACING,
-                        y: depth * VERTICAL_SPACING,
+                        id: nodeId,
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius,
                         filePath: filePath,
                         imports: dep.imports,
                         importedBy: dep.importedBy
                     });
                 });
-            });
+            } else {
+                // Layout hierárquico normal
+                const rootNodes = data.dependencies.filter(dep => dep.importedBy.length === 0);
+                const depthMap = {};
+                const queue = rootNodes.length > 0 ? 
+                    rootNodes.map(node => ({ id: node.fileId, depth: 0, path: [] })) :
+                    [{ id: data.dependencies[0].fileId, depth: 0, path: [] }];
 
-            // Criar conexões
+                while (queue.length > 0) {
+                    const { id, depth, path } = queue.shift();
+                    
+                    if (depthMap[id] !== undefined && depthMap[id] <= depth) {
+                        continue;
+                    }
+                    
+                    if (path.includes(id)) {
+                        if (depthMap[id] === undefined) {
+                            depthMap[id] = depth;
+                        }
+                        continue;
+                    }
+
+                    depthMap[id] = depth;
+
+                    const node = data.dependencies.find(d => d.fileId === id);
+                    if (node) {
+                        const newPath = [...path, id];
+                        node.imports.forEach(importId => {
+                            queue.push({ id: importId, depth: depth + 1, path: newPath });
+                        });
+                    }
+                }
+
+                data.dependencies.forEach(dep => {
+                    if (depthMap[dep.fileId] === undefined) {
+                        depthMap[dep.fileId] = 0;
+                    }
+                });
+
+                const nodesByDepth = {};
+                data.dependencies.forEach(dep => {
+                    const depth = depthMap[dep.fileId];
+                    if (!nodesByDepth[depth]) nodesByDepth[depth] = [];
+                    nodesByDepth[depth].push(dep);
+                });
+
+                Object.keys(nodesByDepth).sort((a, b) => Number(a) - Number(b)).forEach(depth => {
+                    const nodesAtDepth = nodesByDepth[depth];
+                    const totalWidth = (nodesAtDepth.length - 1) * HORIZONTAL_SPACING;
+                    const startX = -totalWidth / 2;
+
+                    nodesAtDepth.forEach((dep, index) => {
+                        const filePath = data.fileRegistry[dep.fileId] || dep.fileId;
+                        nodes.push({
+                            id: dep.fileId,
+                            x: startX + index * HORIZONTAL_SPACING,
+                            y: Number(depth) * VERTICAL_SPACING,
+                            filePath: filePath,
+                            imports: dep.imports,
+                            importedBy: dep.importedBy
+                        });
+                    });
+                });
+            }
+
+            // Criar conexões e detectar bidirecionais
             let connectionCount = 0;
+            const processedPairs = new Set();
+            
             data.dependencies.forEach(dep => {
                 dep.imports.forEach(importId => {
                     const from = nodes.find(n => n.id === dep.fileId);
                     const to = nodes.find(n => n.id === importId);
                     if (from && to) {
-                        connections.push({ from, to });
+                        // Verificar se é bidirecional
+                        const reverseExists = data.dependencies.find(d => 
+                            d.fileId === importId && d.imports.includes(dep.fileId)
+                        );
+                        
+                        const isBidirectional = reverseExists !== undefined;
+                        const pairKey = [dep.fileId, importId].sort().join('-');
+                        
+                        // Se é bidirecional e já foi processado, pular
+                        if (isBidirectional && processedPairs.has(pairKey)) {
+                            return; // Não adicionar duplicata
+                        }
+                        
+                        connections.push({ 
+                            from, 
+                            to, 
+                            isBidirectional
+                        });
+                        
+                        if (isBidirectional) {
+                            processedPairs.add(pairKey);
+                        }
+                        
                         connectionCount++;
                     }
                 });
             });
 
             document.getElementById('stat-connections').textContent = connectionCount;
+            
+            // Debug: mostrar conexões no console
+            console.log('Conexões criadas:', connections.map(c => ({
+                from: c.from.id,
+                to: c.to.id,
+                bidir: c.isBidirectional
+            })));
         }
 
         // Desenhar tudo
@@ -327,14 +438,113 @@
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
 
-            // Desenhar conexões
+            // Desenhar conexões com setas
             ctx.strokeStyle = LINE_COLOR;
-            ctx.lineWidth = LINE_WIDTH;
+            ctx.fillStyle = LINE_COLOR;
+            
             connections.forEach(conn => {
-                ctx.beginPath();
-                ctx.moveTo(conn.from.x, conn.from.y);
-                ctx.lineTo(conn.to.x, conn.to.y);
-                ctx.stroke();
+                const fromX = conn.from.x;
+                const fromY = conn.from.y;
+                const toX = conn.to.x;
+                const toY = conn.to.y;
+                
+                // Calcular ângulo da linha
+                const angle = Math.atan2(toY - fromY, toX - fromX);
+                const endX = toX - Math.cos(angle) * NODE_RADIUS;
+                const endY = toY - Math.sin(angle) * NODE_RADIUS;
+                
+                if (conn.isBidirectional) {
+                    // Linha dupla para bidirecionais (como "=")
+                    const spacing = 4; // Espaçamento entre as duas linhas
+                    const perpX = -Math.sin(angle) * spacing;
+                    const perpY = Math.cos(angle) * spacing;
+                    
+                    ctx.lineWidth = LINE_WIDTH;
+                    
+                    // Calcular pontos de início e fim ajustados para o raio do nó
+                    const startX = fromX + Math.cos(angle) * NODE_RADIUS;
+                    const startY = fromY + Math.sin(angle) * NODE_RADIUS;
+                    const finishX = toX - Math.cos(angle) * NODE_RADIUS;
+                    const finishY = toY - Math.sin(angle) * NODE_RADIUS;
+                    
+                    // Primeira linha (superior)
+                    ctx.beginPath();
+                    ctx.moveTo(startX + perpX, startY + perpY);
+                    ctx.lineTo(finishX + perpX, finishY + perpY);
+                    ctx.stroke();
+                    
+                    // Segunda linha (inferior)
+                    ctx.beginPath();
+                    ctx.moveTo(startX - perpX, startY - perpY);
+                    ctx.lineTo(finishX - perpX, finishY - perpY);
+                    ctx.stroke();
+                    
+                    // Desenhar setas em ambas as pontas
+                    const arrowSize = 12;
+                    const arrowSpread = Math.PI / 6;
+                    
+                    // Seta 1: aponta para 'to' (direção →)
+                    const arrow1X = finishX + perpX;
+                    const arrow1Y = finishY + perpY;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(arrow1X, arrow1Y);
+                    ctx.lineTo(
+                        arrow1X - arrowSize * Math.cos(angle - arrowSpread),
+                        arrow1Y - arrowSize * Math.sin(angle - arrowSpread)
+                    );
+                    ctx.lineTo(
+                        arrow1X - arrowSize * Math.cos(angle + arrowSpread),
+                        arrow1Y - arrowSize * Math.sin(angle + arrowSpread)
+                    );
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Seta 2: aponta para 'from' (direção ←)
+                    const reverseAngle = angle + Math.PI;
+                    const arrow2X = startX - perpX;
+                    const arrow2Y = startY - perpY;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(arrow2X, arrow2Y);
+                    ctx.lineTo(
+                        arrow2X - arrowSize * Math.cos(reverseAngle - arrowSpread),
+                        arrow2Y - arrowSize * Math.sin(reverseAngle - arrowSpread)
+                    );
+                    ctx.lineTo(
+                        arrow2X - arrowSize * Math.cos(reverseAngle + arrowSpread),
+                        arrow2Y - arrowSize * Math.sin(reverseAngle + arrowSpread)
+                    );
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                } else {
+                    // Linha simples para unidirecionais
+                    ctx.lineWidth = LINE_WIDTH;
+                    
+                    // Desenhar linha
+                    ctx.beginPath();
+                    ctx.moveTo(fromX, fromY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                    
+                    // Desenhar seta na ponta
+                    const arrowSize = 10;
+                    const arrowSpread = Math.PI / 6;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(
+                        endX - arrowSize * Math.cos(angle - arrowSpread),
+                        endY - arrowSize * Math.sin(angle - arrowSpread)
+                    );
+                    ctx.lineTo(
+                        endX - arrowSize * Math.cos(angle + arrowSpread),
+                        endY - arrowSize * Math.sin(angle + arrowSpread)
+                    );
+                    ctx.closePath();
+                    ctx.fill();
+                }
             });
 
             // Desenhar nós
