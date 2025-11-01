@@ -141,6 +141,44 @@
             margin: 5px 0;
             color: #ccc;
         }
+
+        #legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(17, 17, 17, 0.95);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 200px;
+        }
+
+        #legend h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #0066cc;
+        }
+
+        #legend .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        #legend .legend-circle {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #000;
+        }
+
+        #legend .legend-line {
+            width: 30px;
+            height: 2px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -172,7 +210,28 @@
         <p><span class="label">Projeto:</span> <span id="stat-project">-</span></p>
         <p><span class="label">Total de arquivos:</span> <span id="stat-files">0</span></p>
         <p><span class="label">Total de conexões:</span> <span id="stat-connections">0</span></p>
+        <p><span class="label">Ciclos detectados:</span> <span id="stat-cycles" style="color: #ff3333;">0</span></p>
         <p><span class="label">Analisado em:</span> <span id="stat-date">-</span></p>
+    </div>
+
+    <div id="legend">
+        <h3>Legenda</h3>
+        <div class="legend-item">
+            <div class="legend-circle" style="background-color: #fff;"></div>
+            <span>Nó normal</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-circle" style="background-color: #ff3333;"></div>
+            <span>Nó em ciclo</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line" style="background-color: #fff;"></div>
+            <span>Dependência normal</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line" style="background-color: #ff3333;"></div>
+            <span>Dependência circular</span>
+        </div>
     </div>
 
     <script>
@@ -194,7 +253,9 @@
         const NODE_RADIUS = 20;
         const NODE_COLOR = '#fff';
         const NODE_HOVER_COLOR = '#0066cc';
+        const NODE_CIRCULAR_COLOR = '#ff3333'; // Vermelho para nós circulares
         const LINE_COLOR = '#fff';
+        const LINE_CIRCULAR_COLOR = '#ff3333'; // Vermelho para conexões circulares
         const LINE_WIDTH = 2;
         const VERTICAL_SPACING = 150;
         const HORIZONTAL_SPACING = 200;
@@ -295,7 +356,11 @@
             const nodesInCycles = new Set();
             cycles.forEach(cycle => cycle.forEach(nodeId => nodesInCycles.add(nodeId)));
             
+            // Atualizar contador de ciclos
+            document.getElementById('stat-cycles').textContent = cycles.length;
+            
             console.log('Ciclos detectados:', cycles);
+            console.log('Nós em ciclos:', Array.from(nodesInCycles));
 
             // Se todos os nós estão em um ciclo, usar layout circular
             if (nodesInCycles.size === data.dependencies.length && cycles.length > 0) {
@@ -315,7 +380,8 @@
                         y: Math.sin(angle) * radius,
                         filePath: filePath,
                         imports: dep.imports,
-                        importedBy: dep.importedBy
+                        importedBy: dep.importedBy,
+                        isCircular: true // Marcar como circular
                     });
                 });
             } else {
@@ -377,7 +443,8 @@
                             y: Number(depth) * VERTICAL_SPACING,
                             filePath: filePath,
                             imports: dep.imports,
-                            importedBy: dep.importedBy
+                            importedBy: dep.importedBy,
+                            isCircular: nodesInCycles.has(dep.fileId) // Marcar se está em ciclo
                         });
                     });
                 });
@@ -405,10 +472,14 @@
                             return; // Não adicionar duplicata
                         }
                         
+                        // Verificar se ambos os nós estão em um ciclo
+                        const isCircular = from.isCircular && to.isCircular;
+                        
                         connections.push({ 
                             from, 
                             to, 
-                            isBidirectional
+                            isBidirectional,
+                            isCircular // Marcar conexão como circular
                         });
                         
                         if (isBidirectional) {
@@ -439,10 +510,11 @@
             ctx.scale(scale, scale);
 
             // Desenhar conexões com setas
-            ctx.strokeStyle = LINE_COLOR;
-            ctx.fillStyle = LINE_COLOR;
-            
             connections.forEach(conn => {
+                // Usar cor vermelha se a conexão for circular
+                ctx.strokeStyle = conn.isCircular ? LINE_CIRCULAR_COLOR : LINE_COLOR;
+                ctx.fillStyle = conn.isCircular ? LINE_CIRCULAR_COLOR : LINE_COLOR;
+                
                 const fromX = conn.from.x;
                 const fromY = conn.from.y;
                 const toX = conn.to.x;
@@ -551,14 +623,25 @@
             nodes.forEach(node => {
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, NODE_RADIUS, 0, Math.PI * 2);
-                ctx.fillStyle = node.hover ? NODE_HOVER_COLOR : NODE_COLOR;
+                
+                // Escolher cor baseado no estado do nó
+                let fillColor;
+                if (node.hover) {
+                    fillColor = NODE_HOVER_COLOR;
+                } else if (node.isCircular) {
+                    fillColor = NODE_CIRCULAR_COLOR;
+                } else {
+                    fillColor = NODE_COLOR;
+                }
+                
+                ctx.fillStyle = fillColor;
                 ctx.fill();
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
                 // Desenhar texto do arquivo
-                ctx.fillStyle = '#fff';
+                ctx.fillStyle = node.isCircular ? NODE_CIRCULAR_COLOR : '#fff';
                 ctx.font = '12px monospace';
                 ctx.textAlign = 'center';
                 const fileName = node.filePath.split(/[\/\\]/).pop();
@@ -618,6 +701,9 @@
 
         // Mostrar informações do nó
         function showNodeInfo(node) {
+            const circularWarning = node.isCircular ? ' ⚠️ (Dependência Circular)' : '';
+            document.getElementById('info-title').textContent = 'Informações do Nó' + circularWarning;
+            document.getElementById('info-title').style.color = node.isCircular ? '#ff3333' : '#0066cc';
             document.getElementById('info-file').textContent = node.filePath;
             document.getElementById('info-imports').textContent = 
                 node.imports.length > 0 
