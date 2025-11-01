@@ -5,6 +5,7 @@ module DependencyAnalyzer
     ( AnalysisResult(..)
     , FileNode(..)
     , analyzeDependencies
+    , isExternalImport  -- Exportando para testes
     ) where
 
 import qualified Data.Map.Strict as Map
@@ -21,6 +22,14 @@ import ImportParser (parseImports, ImportStatement(..), importSource)
 -- | Pastas que devem ser ignoradas (sempre externas)
 ignoredPaths :: [String]
 ignoredPaths = ["node_modules", ".git", "dist", "build", ".next", "coverage"]
+
+-- | Bibliotecas/pacotes externos conhecidos
+knownExternalPackages :: [String]
+knownExternalPackages = 
+    [ "react", "react-native", "react-dom", "lodash", "axios", "moment"
+    , "@react-navigation", "@naturacode", "styled-components"
+    , "zustand", "react-query", "@tanstack", "expo", "metro"
+    ]
 
 -- | Nó de arquivo no grafo de dependências
 data FileNode = FileNode
@@ -49,8 +58,16 @@ containsIgnoredPath path =
 -- | Verifica se um import é externo
 isExternalImport :: String -> Bool
 isExternalImport path = 
-    not ("./" `isPrefixOf` path || "../" `isPrefixOf` path)
-    || containsIgnoredPath path
+    -- Se contém paths ignorados, é externo
+    containsIgnoredPath path
+    -- Se é uma biblioteca conhecida, é externo
+    || any (\pkg -> pkg `isPrefixOf` path) knownExternalPackages
+    -- Se começa com @ mas não é path relativo, provavelmente é pacote scoped
+    || ("@" `isPrefixOf` path && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path))
+    -- Se é path relativo, é interno
+    && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path)
+    -- Se começa com diretórios típicos de projeto, é interno
+    && not (any (\prefix -> prefix `isPrefixOf` path) ["src/", "screens/", "components/", "services/", "utils/", "hooks/", "store/", "types/", "config/", "common/", "modules/", "assets/", "routes/"])
 
 -- | Resolve import para caminho de arquivo
 resolveImport :: FilePath -> FilePath -> Text -> IO (Maybe FilePath)
@@ -61,13 +78,37 @@ resolveImport rootDir currentFile importPath = do
         else do
             let currentDir = takeDirectory currentFile
                 extensions = [".ts", ".tsx", ".js", ".jsx"]
-                basePath = normalise (currentDir </> importStr)
-                -- Tentar com extensões
-                withExt = map (basePath ++) extensions
-                -- Tentar com /index.{ext}
+                
+            -- Determinar o caminho base
+            basePath <- if "./" `isPrefixOf` importStr || "../" `isPrefixOf` importStr
+                then do
+                    -- Path relativo
+                    return $ normalise (currentDir </> importStr)
+                else do
+                    -- Path absoluto baseado em src/ (preferido) ou root do projeto
+                    let srcBasedPath = rootDir </> "src" </> importStr
+                        rootBasedPath = rootDir </> importStr
+                    -- Tentar primeiro com src/, depois com root
+                    return $ normalise srcBasedPath
+                
+            -- Tentar resolver arquivo em várias formas:
+            -- 1. Como arquivo direto com extensões
+            let withExt = map (basePath ++) extensions
+            -- 2. Como diretório com /index.{ext}
                 withIndex = map (\ext -> basePath </> "index" ++ ext) extensions
-                allPaths = basePath : (withExt ++ withIndex)
-            findFirst allPaths
+            -- 3. Como path exato (pode ser sem extensão)
+                allPaths = withExt ++ withIndex ++ [basePath]
+            
+            result <- findFirst allPaths
+            case result of
+                Just path -> return $ Just path
+                Nothing -> do
+                    -- Se falhou com src/, tentar com root/
+                    let rootBasePath = rootDir </> importStr
+                        rootWithExt = map (rootBasePath ++) extensions
+                        rootWithIndex = map (\ext -> rootBasePath </> "index" ++ ext) extensions
+                        rootAllPaths = rootWithExt ++ rootWithIndex ++ [rootBasePath]
+                    findFirst rootAllPaths
   where
     findFirst [] = return Nothing
     findFirst (p:ps) = do
