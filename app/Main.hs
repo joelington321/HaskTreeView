@@ -15,6 +15,7 @@ main = do
       outputFile = "output" </> "dependencies.json"
   
   putStrLn $ "Analisando diretório: " ++ testDir
+  putStrLn "Ignorando: node_modules, .git, dist, build, .stack-work, vendor, etc."
   putStrLn ""
   
   -- Obter todos os arquivos permitidos
