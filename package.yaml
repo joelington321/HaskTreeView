@@ -17,6 +17,10 @@ dependencies:
 - filepath
 - containers
 - text
+- aeson
+- aeson-pretty
+- bytestring
+- time
 
 library:
   source-dirs: src

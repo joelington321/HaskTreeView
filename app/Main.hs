@@ -1,51 +1,33 @@
 module Main where
 
 import FileFilter (getFilteredFiles)
-import Config (allowedExtensions)
-import ImportParser (parseImports, ImportStatement(..), supportedImportFormats)
-import qualified Data.Set as Set
-import qualified Data.Text as T
+import DependencyAnalyzer (analyzeDependencies)
+import JsonGenerator (saveJsonToFile)
+import System.FilePath ((</>))
 
 main :: IO ()
 main = do
-  putStrLn "=== HaskTreeView - Teste de Import Parser ==="
+  putStrLn "=== HaskTreeView - Analisador de Dependências ==="
   putStrLn ""
   
-  -- Mostrar formatos suportados
-  putStrLn "Formatos de import suportados:"
-  mapM_ putStrLn (map ("  - " ++) supportedImportFormats)
-  putStrLn ""
-  
-  -- Analisar pasta de teste
+  -- Definir diretório de análise
   let testDir = "fakePathTestTree"
+      outputFile = "output" </> "dependencies.json"
+  
   putStrLn $ "Analisando diretório: " ++ testDir
   putStrLn ""
   
-  -- Obter arquivos filtrados
+  -- Obter todos os arquivos permitidos
   files <- getFilteredFiles testDir
-  
   putStrLn $ "Arquivos encontrados: " ++ show (length files)
-  putStrLn (replicate 60 '=')
   putStrLn ""
   
-  -- Analisar imports de cada arquivo
-  mapM_ analyzeFile files
-
-analyzeFile :: FilePath -> IO ()
-analyzeFile filePath = do
-  putStrLn $ "Arquivo: " ++ filePath
-  imports <- parseImports filePath
+  -- Analisar dependências
+  putStrLn "Construindo grafo de dependências..."
+  result <- analyzeDependencies testDir files
   
-  if null imports
-    then putStrLn "  Nenhum import encontrado"
-    else do
-      putStrLn $ "  Imports encontrados (" ++ show (length imports) ++ "):"
-      mapM_ printImport imports
-  
+  -- Salvar JSON
+  putStrLn "Gerando JSON..."
+  saveJsonToFile outputFile result
   putStrLn ""
-
-printImport :: ImportStatement -> IO ()
-printImport imp = do
-  putStrLn $ "    Linha " ++ show (lineNumber imp) ++ ":"
-  putStrLn $ "      Code: " ++ T.unpack (importLine imp)
-  putStrLn $ "      From: " ++ T.unpack (importSource imp)
+  putStrLn "Análise concluída com sucesso!"

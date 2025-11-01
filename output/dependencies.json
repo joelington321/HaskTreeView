@@ -1,0 +1,54 @@
+{
+    "analyzedAt": "2025-11-01T15:13:06Z",
+    "dependencies": [
+        {
+            "fileId": "1",
+            "importedBy": [],
+            "imports": [
+                "5",
+                "3"
+            ]
+        },
+        {
+            "fileId": "2",
+            "importedBy": [
+                "3"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "3",
+            "importedBy": [
+                "1"
+            ],
+            "imports": [
+                "2"
+            ]
+        },
+        {
+            "fileId": "4",
+            "importedBy": [
+                "5"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "5",
+            "importedBy": [
+                "1"
+            ],
+            "imports": [
+                "4"
+            ]
+        }
+    ],
+    "fileRegistry": {
+        "0": "C:\\Dev\\HaskTreeView\\fakePathTestTree",
+        "1": "App.tsx",
+        "2": "src\\Component2\\styles.ts",
+        "3": "src\\Component2\\index.tsx",
+        "4": "src\\Component1\\styles.ts",
+        "5": "src\\Component1\\index.tsx"
+    },
+    "projectName": "fakePathTestTree"
+}
