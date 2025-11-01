@@ -210,6 +210,7 @@
         <p><span class="label">Projeto:</span> <span id="stat-project">-</span></p>
         <p><span class="label">Total de arquivos:</span> <span id="stat-files">0</span></p>
         <p><span class="label">Total de conexões:</span> <span id="stat-connections">0</span></p>
+        <p><span class="label">Árvores desconexas:</span> <span id="stat-components">0</span></p>
         <p><span class="label">Ciclos detectados:</span> <span id="stat-cycles" style="color: #ff3333;">0</span></p>
         <p><span class="label">Analisado em:</span> <span id="stat-date">-</span></p>
     </div>
@@ -232,6 +233,10 @@
             <div class="legend-line" style="background-color: #ff3333;"></div>
             <span>Dependência circular</span>
         </div>
+        <div class="legend-item">
+            <div style="width: 30px; height: 16px; margin-right: 10px; border: 2px dashed rgba(0, 150, 255, 0.8); border-radius: 4px; background-color: rgba(0, 150, 255, 0.2);"></div>
+            <span>Árvore desconexa</span>
+        </div>
     </div>
 
     <script>
@@ -248,6 +253,7 @@
         let lastX = 0;
         let lastY = 0;
         let scale = 1;
+        let connectedComponents = []; // Armazenar componentes conectados
 
         // Configurações visuais
         const NODE_RADIUS = 20;
@@ -339,6 +345,157 @@
             return cycles;
         }
 
+        // Desenhar contornos ao redor dos componentes conectados
+        function drawComponentBoundaries() {
+            const colors = [
+                'rgba(0, 150, 255, 0.3)',   // Azul
+                'rgba(255, 150, 0, 0.3)',   // Laranja
+                'rgba(0, 255, 150, 0.3)',   // Verde
+                'rgba(255, 0, 150, 0.3)',   // Rosa
+                'rgba(150, 0, 255, 0.3)',   // Roxo
+                'rgba(255, 255, 0, 0.3)',   // Amarelo
+                'rgba(0, 255, 255, 0.3)',   // Ciano
+            ];
+            
+            const borderColors = [
+                'rgba(0, 150, 255, 0.8)',   // Azul
+                'rgba(255, 150, 0, 0.8)',   // Laranja
+                'rgba(0, 255, 150, 0.8)',   // Verde
+                'rgba(255, 0, 150, 0.8)',   // Rosa
+                'rgba(150, 0, 255, 0.8)',   // Roxo
+                'rgba(255, 255, 0, 0.8)',   // Amarelo
+                'rgba(0, 255, 255, 0.8)',   // Ciano
+            ];
+            
+            connectedComponents.forEach((component, index) => {
+                // Não desenhar contorno para componentes com apenas 1 nó
+                if (component.length <= 1) return;
+                
+                // Encontrar os nós deste componente
+                const componentNodes = nodes.filter(node => component.includes(node.id));
+                if (componentNodes.length === 0) return;
+                
+                // Calcular bounding box
+                const padding = 40; // Espaço extra ao redor
+                const minX = Math.min(...componentNodes.map(n => n.x)) - padding;
+                const maxX = Math.max(...componentNodes.map(n => n.x)) + padding;
+                const minY = Math.min(...componentNodes.map(n => n.y)) - padding;
+                const maxY = Math.max(...componentNodes.map(n => n.y)) + padding;
+                
+                const width = maxX - minX;
+                const height = maxY - minY;
+                const centerX = minX + width / 2;
+                const centerY = minY + height / 2;
+                
+                // Escolher cor baseado no índice do componente
+                const colorIndex = index % colors.length;
+                const fillColor = colors[colorIndex];
+                const strokeColor = borderColors[colorIndex];
+                
+                // Desenhar retângulo arredondado
+                const radius = 20; // Raio dos cantos arredondados
+                
+                ctx.beginPath();
+                ctx.moveTo(minX + radius, minY);
+                ctx.lineTo(maxX - radius, minY);
+                ctx.arcTo(maxX, minY, maxX, minY + radius, radius);
+                ctx.lineTo(maxX, maxY - radius);
+                ctx.arcTo(maxX, maxY, maxX - radius, maxY, radius);
+                ctx.lineTo(minX + radius, maxY);
+                ctx.arcTo(minX, maxY, minX, maxY - radius, radius);
+                ctx.lineTo(minX, minY + radius);
+                ctx.arcTo(minX, minY, minX + radius, minY, radius);
+                ctx.closePath();
+                
+                // Preencher com cor semi-transparente
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                
+                // Desenhar borda
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]); // Linha tracejada
+                ctx.stroke();
+                ctx.setLineDash([]); // Resetar para linha sólida
+                
+                // Desenhar label do componente
+                ctx.fillStyle = strokeColor;
+                ctx.font = 'bold 14px monospace';
+                ctx.textAlign = 'center';
+                const label = `Árvore ${index + 1} (${component.length} nós)`;
+                ctx.fillText(label, centerX, minY - 10);
+            });
+        }
+
+        // Detectar componentes conectados (árvores desconexas)
+        function findConnectedComponents() {
+            if (!data) return [];
+            
+            const visited = new Set();
+            const components = [];
+            
+            // Criar um mapa de adjacência (bidirecional para considerar todas as conexões)
+            const adjacencyMap = new Map();
+            data.dependencies.forEach(dep => {
+                if (!adjacencyMap.has(dep.fileId)) {
+                    adjacencyMap.set(dep.fileId, new Set());
+                }
+                
+                // Adicionar importações
+                dep.imports.forEach(importId => {
+                    adjacencyMap.get(dep.fileId).add(importId);
+                    
+                    // Adicionar conexão reversa
+                    if (!adjacencyMap.has(importId)) {
+                        adjacencyMap.set(importId, new Set());
+                    }
+                    adjacencyMap.get(importId).add(dep.fileId);
+                });
+                
+                // Adicionar importedBy
+                dep.importedBy.forEach(importedById => {
+                    adjacencyMap.get(dep.fileId).add(importedById);
+                    
+                    if (!adjacencyMap.has(importedById)) {
+                        adjacencyMap.set(importedById, new Set());
+                    }
+                    adjacencyMap.get(importedById).add(dep.fileId);
+                });
+            });
+            
+            // BFS para encontrar componentes
+            function bfs(startNodeId) {
+                const component = [];
+                const queue = [startNodeId];
+                visited.add(startNodeId);
+                
+                while (queue.length > 0) {
+                    const nodeId = queue.shift();
+                    component.push(nodeId);
+                    
+                    const neighbors = adjacencyMap.get(nodeId) || new Set();
+                    neighbors.forEach(neighborId => {
+                        if (!visited.has(neighborId)) {
+                            visited.add(neighborId);
+                            queue.push(neighborId);
+                        }
+                    });
+                }
+                
+                return component;
+            }
+            
+            // Encontrar todos os componentes
+            data.dependencies.forEach(dep => {
+                if (!visited.has(dep.fileId)) {
+                    const component = bfs(dep.fileId);
+                    components.push(component);
+                }
+            });
+            
+            return components;
+        }
+
         // Processar dados do JSON
         function processData() {
             if (!data) return;
@@ -361,6 +518,14 @@
             
             console.log('Ciclos detectados:', cycles);
             console.log('Nós em ciclos:', Array.from(nodesInCycles));
+            
+            // Detectar componentes conectados (árvores desconexas)
+            connectedComponents = findConnectedComponents();
+            console.log('Componentes conectados:', connectedComponents);
+            console.log('Número de árvores desconexas:', connectedComponents.length);
+            
+            // Atualizar estatísticas de componentes
+            document.getElementById('stat-components').textContent = connectedComponents.length;
 
             // Se todos os nós estão em um ciclo, usar layout circular
             if (nodesInCycles.size === data.dependencies.length && cycles.length > 0) {
@@ -508,6 +673,11 @@
             ctx.save();
             ctx.translate(offsetX, offsetY);
             ctx.scale(scale, scale);
+
+            // Desenhar contornos de componentes conectados (se houver mais de um componente)
+            if (connectedComponents.length > 1) {
+                drawComponentBoundaries();
+            }
 
             // Desenhar conexões com setas
             connections.forEach(conn => {

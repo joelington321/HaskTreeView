@@ -1,0 +1,63 @@
+{
+  "projectName": "disconnected-trees-test",
+  "analyzedAt": "2025-11-01T16:00:00Z",
+  "fileRegistry": {
+    "0": "C:\\Projects\\test",
+    "1": "TreeA-File1.tsx",
+    "2": "TreeA-File2.tsx",
+    "3": "TreeA-File3.tsx",
+    "4": "TreeB-File1.tsx",
+    "5": "TreeB-File2.tsx",
+    "6": "TreeC-File1.tsx",
+    "7": "TreeC-File2.tsx",
+    "8": "TreeC-File3.tsx",
+    "9": "IsolatedFile.tsx"
+  },
+  "dependencies": [
+    {
+      "fileId": "1",
+      "imports": ["2"],
+      "importedBy": []
+    },
+    {
+      "fileId": "2",
+      "imports": ["3"],
+      "importedBy": ["1"]
+    },
+    {
+      "fileId": "3",
+      "imports": [],
+      "importedBy": ["2"]
+    },
+    {
+      "fileId": "4",
+      "imports": ["5"],
+      "importedBy": []
+    },
+    {
+      "fileId": "5",
+      "imports": [],
+      "importedBy": ["4"]
+    },
+    {
+      "fileId": "6",
+      "imports": ["7"],
+      "importedBy": []
+    },
+    {
+      "fileId": "7",
+      "imports": ["8"],
+      "importedBy": ["6"]
+    },
+    {
+      "fileId": "8",
+      "imports": [],
+      "importedBy": ["7"]
+    },
+    {
+      "fileId": "9",
+      "imports": [],
+      "importedBy": []
+    }
+  ]
+}
