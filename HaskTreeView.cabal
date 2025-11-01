@@ -25,6 +25,7 @@ library
   exposed-modules:
       Config
       FileFilter
+      ImportParser
       Lib
   other-modules:
       Paths_HaskTreeView
@@ -35,6 +36,7 @@ library
     , containers
     , directory
     , filepath
+    , text
   default-language: Haskell2010
 
 executable HaskTreeView-exe
@@ -50,6 +52,7 @@ executable HaskTreeView-exe
     , containers
     , directory
     , filepath
+    , text
   default-language: Haskell2010
 
 test-suite HaskTreeView-test
@@ -66,4 +69,5 @@ test-suite HaskTreeView-test
     , containers
     , directory
     , filepath
+    , text
   default-language: Haskell2010

@@ -16,6 +16,7 @@ dependencies:
 - directory
 - filepath
 - containers
+- text
 
 library:
   source-dirs: src
