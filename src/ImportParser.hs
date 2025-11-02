@@ -118,10 +118,14 @@ extractSource line
 parseImports :: FilePath -> IO [ImportStatement]
 parseImports filePath = do
     content <- TIO.readFile filePath
-    let linesWithNumbers = zip [1..] (T.lines content)
-        importLines = filter (isImportLine . snd) linesWithNumbers
-        imports = map createImport importLines
-    return imports
+    let contentText = T.unlines (T.lines content)  -- Reconstrói o texto completo
+        linesWithNumbers = zip [1..] (T.lines content)
+        -- Detectar imports multi-linha
+        multiLineImports = extractMultiLineImports contentText
+        -- Detectar imports de linha única
+        singleLineImports = filter (isImportLine . snd) linesWithNumbers
+        allImports = map createImport singleLineImports ++ multiLineImports
+    return allImports
   where
     createImport :: (Int, Text) -> ImportStatement
     createImport (lineNum, line) = ImportStatement
@@ -129,3 +133,53 @@ parseImports filePath = do
         , importLine = line
         , lineNumber = lineNum
         }
+
+-- | Extrai imports multi-linha (import { ... } from '...')
+extractMultiLineImports :: Text -> [ImportStatement]
+extractMultiLineImports content =
+    let -- Regex para capturar imports multi-linha
+        matches = findImportBlocks content
+    in map createMultiLineImport matches
+  where
+    createMultiLineImport :: (Int, Text) -> ImportStatement
+    createMultiLineImport (lineNum, importText) = ImportStatement
+        { importSource = maybe "" id (extractSource importText)
+        , importLine = T.strip $ T.unwords $ T.words importText  -- Compacta em uma linha
+        , lineNumber = lineNum
+        }
+
+-- | Encontra blocos de import multi-linha no texto
+findImportBlocks :: Text -> [(Int, Text)]
+findImportBlocks content =
+    let linesText = T.lines content
+        indexed = zip [1..] linesText
+    in findBlocks indexed []
+  where
+    findBlocks :: [(Int, Text)] -> [(Int, Text)] -> [(Int, Text)]
+    findBlocks [] acc = acc
+    findBlocks ((lineNum, line):rest) acc
+        | "import " `T.isPrefixOf` T.strip line && not ("from" `T.isInfixOf` line) =
+            -- Início de import multi-linha
+            let (block, remaining) = collectUntilFrom rest [T.strip line]
+                fullImport = T.unwords block
+            in if "from" `T.isInfixOf` fullImport
+               then findBlocks remaining (acc ++ [(lineNum, fullImport)])
+               else findBlocks remaining acc
+        | "export " `T.isPrefixOf` T.strip line && not ("from" `T.isInfixOf` line) =
+            -- Início de export multi-linha
+            let (block, remaining) = collectUntilFrom rest [T.strip line]
+                fullExport = T.unwords block
+            in if "from" `T.isInfixOf` fullExport
+               then findBlocks remaining (acc ++ [(lineNum, fullExport)])
+               else findBlocks remaining acc
+        | otherwise = findBlocks rest acc
+
+    collectUntilFrom :: [(Int, Text)] -> [Text] -> ([Text], [(Int, Text)])
+    collectUntilFrom [] acc = (acc, [])
+    collectUntilFrom ((lineNum, line):rest) acc
+        | "from" `T.isInfixOf` line =
+            -- Encontrou o 'from', incluir esta linha e parar
+            (acc ++ [T.strip line], rest)
+        | otherwise =
+            -- Continuar acumulando
+            collectUntilFrom rest (acc ++ [T.strip line])
