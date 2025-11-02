@@ -1,51 +1,41 @@
-import './Legend.css';
+import { 
+  LegendContainer, 
+  Title, 
+  LegendItem, 
+  LegendCircle, 
+  LegendSquare, 
+  LegendLine, 
+  LegendBox 
+} from './Legend.styles';
 
 export function Legend() {
   return (
-    <div className="legend">
-      <h3>Legenda</h3>
-      <div className="legend-item">
-        <div className="legend-circle" style={{ backgroundColor: '#fff' }}></div>
+    <LegendContainer>
+      <Title>Legenda</Title>
+      <LegendItem>
+        <LegendCircle $color="#fff" />
         <span>Nó normal</span>
-      </div>
-      <div className="legend-item">
-        <div className="legend-circle" style={{ backgroundColor: '#ff3333' }}></div>
+      </LegendItem>
+      <LegendItem>
+        <LegendCircle $color="#ff3333" />
         <span>Nó em ciclo</span>
-      </div>
-      <div className="legend-item">
-        <div
-          className="legend-square"
-          style={{
-            backgroundColor: '#888',
-            borderRadius: '4px',
-            width: '20px',
-            height: '20px',
-            marginRight: '10px',
-          }}
-        ></div>
+      </LegendItem>
+      <LegendItem>
+        <LegendSquare />
         <span>Nó isolado (config)</span>
-      </div>
-      <div className="legend-item">
-        <div className="legend-line" style={{ backgroundColor: '#fff' }}></div>
+      </LegendItem>
+      <LegendItem>
+        <LegendLine $color="#fff" />
         <span>Dependência normal</span>
-      </div>
-      <div className="legend-item">
-        <div className="legend-line" style={{ backgroundColor: '#ff3333' }}></div>
+      </LegendItem>
+      <LegendItem>
+        <LegendLine $color="#ff3333" />
         <span>Dependência circular</span>
-      </div>
-      <div className="legend-item">
-        <div
-          style={{
-            width: '30px',
-            height: '16px',
-            marginRight: '10px',
-            border: '2px dashed rgba(0, 150, 255, 0.8)',
-            borderRadius: '4px',
-            backgroundColor: 'rgba(0, 150, 255, 0.2)',
-          }}
-        ></div>
+      </LegendItem>
+      <LegendItem>
+        <LegendBox />
         <span>Árvore desconexa</span>
-      </div>
-    </div>
+      </LegendItem>
+    </LegendContainer>
   );
 }

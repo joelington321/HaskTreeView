@@ -1,6 +1,6 @@
 import { GraphStats } from '@/types';
 import { formatDate } from '@/utils/helpers';
-import './Stats.css';
+import { StatsContainer, Title, Text, Label, CyclesWarning } from './Stats.styles';
 
 interface StatsProps {
   stats: GraphStats;
@@ -8,29 +8,31 @@ interface StatsProps {
 
 export function Stats({ stats }: StatsProps) {
   return (
-    <div className="stats">
-      <h3>Estatísticas</h3>
-      <p>
-        <span className="label">Projeto:</span> {stats.projectName}
-      </p>
-      <p>
-        <span className="label">Total de arquivos:</span> {stats.totalFiles}
-      </p>
-      <p>
-        <span className="label">Total de conexões:</span> {stats.totalConnections}
-      </p>
-      <p>
-        <span className="label">Árvores desconexas:</span> {stats.disconnectedTrees}
-      </p>
-      <p>
-        <span className="label">Ciclos detectados:</span>{' '}
-        <span className={stats.cyclesDetected > 0 ? 'cycles-warning' : ''}>
-          {stats.cyclesDetected}
-        </span>
-      </p>
-      <p>
-        <span className="label">Analisado em:</span> {formatDate(stats.analyzedAt)}
-      </p>
-    </div>
+    <StatsContainer>
+      <Title>Estatísticas</Title>
+      <Text>
+        <Label>Projeto:</Label> {stats.projectName}
+      </Text>
+      <Text>
+        <Label>Total de arquivos:</Label> {stats.totalFiles}
+      </Text>
+      <Text>
+        <Label>Total de conexões:</Label> {stats.totalConnections}
+      </Text>
+      <Text>
+        <Label>Árvores desconexas:</Label> {stats.disconnectedTrees}
+      </Text>
+      <Text>
+        <Label>Ciclos detectados:</Label>{' '}
+        {stats.cyclesDetected > 0 ? (
+          <CyclesWarning>{stats.cyclesDetected}</CyclesWarning>
+        ) : (
+          stats.cyclesDetected
+        )}
+      </Text>
+      <Text>
+        <Label>Analisado em:</Label> {formatDate(stats.analyzedAt)}
+      </Text>
+    </StatsContainer>
   );
 }

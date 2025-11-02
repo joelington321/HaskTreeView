@@ -7,7 +7,8 @@ import { GraphCanvas } from './components/GraphCanvas';
 import { InfoPanel } from './components/InfoPanel';
 import { Stats } from './components/Stats';
 import { Legend } from './components/Legend';
-import './App.css';
+import { GlobalStyles } from './styles/GlobalStyles';
+import { AppContainer } from './App.styles';
 
 const DEFAULT_CONFIG: CanvasConfig = {
   nodeRadius: 20,
@@ -38,27 +39,30 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <Header />
-      <Controls
-        onFileLoad={loadFromFile}
-        onReset={resetView}
-        onLoadExample={handleLoadExample}
-      />
-      <GraphCanvas
-        canvasRef={canvasRef}
-        nodes={nodesWithHover}
-        connections={connections}
-        components={components}
-        viewport={viewport}
-        hoveredNodeId={hoveredNodeId}
-        config={DEFAULT_CONFIG}
-        handlers={handlers}
-      />
-      <InfoPanel node={selectedNode} nodes={nodes} />
-      <Stats stats={stats} />
-      <Legend />
-    </div>
+    <>
+      <GlobalStyles />
+      <AppContainer>
+        <Header />
+        <Controls
+          onFileLoad={loadFromFile}
+          onReset={resetView}
+          onLoadExample={handleLoadExample}
+        />
+        <GraphCanvas
+          canvasRef={canvasRef}
+          nodes={nodesWithHover}
+          connections={connections}
+          components={components}
+          viewport={viewport}
+          hoveredNodeId={hoveredNodeId}
+          config={DEFAULT_CONFIG}
+          handlers={handlers}
+        />
+        <InfoPanel node={selectedNode} nodes={nodes} />
+        <Stats stats={stats} />
+        <Legend />
+      </AppContainer>
+    </>
   );
 }
 

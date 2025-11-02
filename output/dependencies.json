@@ -1,54 +1,339 @@
 {
-    "analyzedAt": "2025-11-01T19:05:48Z",
+    "analyzedAt": "2025-11-02T22:59:41Z",
     "dependencies": [
         {
             "fileId": "1",
             "importedBy": [],
-            "imports": [
-                "5",
-                "3"
-            ]
+            "imports": []
         },
         {
             "fileId": "2",
-            "importedBy": [
-                "3"
-            ],
+            "importedBy": [],
             "imports": []
         },
         {
             "fileId": "3",
-            "importedBy": [
-                "1"
-            ],
+            "importedBy": [],
             "imports": [
-                "2"
+                "4"
             ]
         },
         {
             "fileId": "4",
             "importedBy": [
-                "5"
+                "3"
             ],
-            "imports": []
+            "imports": [
+                "11",
+                "15",
+                "25",
+                "31",
+                "28",
+                "24",
+                "18",
+                "21",
+                "12",
+                "5"
+            ]
         },
         {
             "fileId": "5",
             "importedBy": [
-                "1"
+                "4"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "6",
+            "importedBy": [
+                "7",
+                "13"
             ],
             "imports": [
-                "4"
+                "11"
             ]
+        },
+        {
+            "fileId": "7",
+            "importedBy": [],
+            "imports": [
+                "9",
+                "10",
+                "6",
+                "8"
+            ]
+        },
+        {
+            "fileId": "8",
+            "importedBy": [
+                "7",
+                "16",
+                "22",
+                "29"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "9",
+            "importedBy": [
+                "7",
+                "13"
+            ],
+            "imports": [
+                "11"
+            ]
+        },
+        {
+            "fileId": "10",
+            "importedBy": [
+                "7",
+                "13"
+            ],
+            "imports": [
+                "11"
+            ]
+        },
+        {
+            "fileId": "11",
+            "importedBy": [
+                "4",
+                "6",
+                "9",
+                "10",
+                "13",
+                "14",
+                "16",
+                "22",
+                "29"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "12",
+            "importedBy": [
+                "4"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "13",
+            "importedBy": [
+                "15"
+            ],
+            "imports": [
+                "11",
+                "9",
+                "10",
+                "6"
+            ]
+        },
+        {
+            "fileId": "14",
+            "importedBy": [
+                "15"
+            ],
+            "imports": [
+                "11"
+            ]
+        },
+        {
+            "fileId": "15",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "13",
+                "14"
+            ]
+        },
+        {
+            "fileId": "16",
+            "importedBy": [
+                "18"
+            ],
+            "imports": [
+                "11",
+                "8",
+                "17"
+            ]
+        },
+        {
+            "fileId": "17",
+            "importedBy": [
+                "16"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "18",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "16"
+            ]
+        },
+        {
+            "fileId": "19",
+            "importedBy": [
+                "21"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "20",
+            "importedBy": [],
+            "imports": []
+        },
+        {
+            "fileId": "21",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "19"
+            ]
+        },
+        {
+            "fileId": "22",
+            "importedBy": [
+                "24"
+            ],
+            "imports": [
+                "11",
+                "8",
+                "23"
+            ]
+        },
+        {
+            "fileId": "23",
+            "importedBy": [
+                "22"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "24",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "22"
+            ]
+        },
+        {
+            "fileId": "25",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "26"
+            ]
+        },
+        {
+            "fileId": "26",
+            "importedBy": [
+                "25"
+            ],
+            "imports": [
+                "27"
+            ]
+        },
+        {
+            "fileId": "27",
+            "importedBy": [
+                "26"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "28",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "29"
+            ]
+        },
+        {
+            "fileId": "29",
+            "importedBy": [
+                "28"
+            ],
+            "imports": [
+                "11",
+                "8",
+                "30"
+            ]
+        },
+        {
+            "fileId": "30",
+            "importedBy": [
+                "29"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "31",
+            "importedBy": [
+                "4"
+            ],
+            "imports": [
+                "32"
+            ]
+        },
+        {
+            "fileId": "32",
+            "importedBy": [
+                "31"
+            ],
+            "imports": [
+                "33"
+            ]
+        },
+        {
+            "fileId": "33",
+            "importedBy": [
+                "32"
+            ],
+            "imports": []
         }
     ],
     "fileRegistry": {
-        "0": "C:\\Dev\\HaskTreeView\\fakePathTestTree",
-        "1": "App.tsx",
-        "2": "src\\Component2\\styles.ts",
-        "3": "src\\Component2\\index.tsx",
-        "4": "src\\Component1\\styles.ts",
-        "5": "src\\Component1\\index.tsx"
+        "0": "C:\\Dev\\HaskTreeView\\viewer-app",
+        "1": "vite.config.ts",
+        "10": "src\\utils\\componentDetection.ts",
+        "11": "src\\types\\index.ts",
+        "12": "src\\styles\\GlobalStyles.ts",
+        "13": "src\\hooks\\useGraphData.ts",
+        "14": "src\\hooks\\useCanvasInteraction.ts",
+        "15": "src\\hooks\\index.ts",
+        "16": "src\\components\\Stats\\Stats.tsx",
+        "17": "src\\components\\Stats\\Stats.styles.ts",
+        "18": "src\\components\\Stats\\index.tsx",
+        "19": "src\\components\\Legend\\Legend.tsx",
+        "2": ".eslintrc.cjs",
+        "20": "src\\components\\Legend\\Legend.styles.ts",
+        "21": "src\\components\\Legend\\index.tsx",
+        "22": "src\\components\\InfoPanel\\InfoPanel.tsx",
+        "23": "src\\components\\InfoPanel\\InfoPanel.styles.ts",
+        "24": "src\\components\\InfoPanel\\index.tsx",
+        "25": "src\\components\\Header\\index.tsx",
+        "26": "src\\components\\Header\\Header.tsx",
+        "27": "src\\components\\Header\\Header.styles.ts",
+        "28": "src\\components\\GraphCanvas\\index.tsx",
+        "29": "src\\components\\GraphCanvas\\GraphCanvas.tsx",
+        "3": "src\\main.tsx",
+        "30": "src\\components\\GraphCanvas\\GraphCanvas.styles.ts",
+        "31": "src\\components\\Controls\\index.tsx",
+        "32": "src\\components\\Controls\\Controls.tsx",
+        "33": "src\\components\\Controls\\Controls.styles.ts",
+        "4": "src\\App.tsx",
+        "5": "src\\App.styles.ts",
+        "6": "src\\utils\\layoutAlgorithms.ts",
+        "7": "src\\utils\\index.ts",
+        "8": "src\\utils\\helpers.ts",
+        "9": "src\\utils\\cycleDetection.ts"
     },
-    "projectName": "fakePathTestTree"
+    "projectName": "viewer-app"
 }

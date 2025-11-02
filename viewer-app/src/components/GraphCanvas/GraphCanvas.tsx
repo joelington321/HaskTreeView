@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { GraphNode, GraphConnection, ConnectedComponent, ViewportState, CanvasConfig } from '@/types';
 import { applyOpacity, getFileName } from '@/utils/helpers';
-import './GraphCanvas.css';
+import { CanvasContainer } from './GraphCanvas.styles';
 
 interface GraphCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -105,13 +105,13 @@ export function GraphCanvas({
   }, [canvasRef, nodes, connections, components, viewport, hoveredNodeId, config]);
 
   return (
-    <div className="canvas-container">
+    <CanvasContainer>
       <canvas
         ref={canvasRef}
         {...handlers}
         style={{ cursor: hoveredNodeId ? 'pointer' : 'grab' }}
       />
-    </div>
+    </CanvasContainer>
   );
 }
 

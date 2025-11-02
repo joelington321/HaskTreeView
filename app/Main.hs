@@ -11,7 +11,7 @@ main = do
   putStrLn ""
   
   -- Definir diretório de análise
-  let testDir = "fakePathTestTree"
+  let testDir = "viewer-app"
       outputFile = "output" </> "dependencies.json"
   
   putStrLn $ "Analisando diretório: " ++ testDir

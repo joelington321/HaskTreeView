@@ -1,10 +1,10 @@
-import './Header.css';
+import { HeaderContainer, Title, Subtitle } from './Header.styles';
 
 export function Header() {
   return (
-    <div className="header">
-      <h1>🌳 HaskTreeView</h1>
-      <p>Visualizador de Árvore de Dependências</p>
-    </div>
+    <HeaderContainer>
+      <Title>🌳 HaskTreeView</Title>
+      <Subtitle>Visualizador de Árvore de Dependências</Subtitle>
+    </HeaderContainer>
   );
 }

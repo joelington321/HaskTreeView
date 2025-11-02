@@ -1,6 +1,6 @@
 import { GraphNode } from '@/types';
 import { getFileName } from '@/utils/helpers';
-import './InfoPanel.css';
+import { InfoPanelContainer, Title, Text, Label } from './InfoPanel.styles';
 
 interface InfoPanelProps {
   node: GraphNode | null;
@@ -24,19 +24,19 @@ export function InfoPanel({ node, nodes }: InfoPanelProps) {
   const circularWarning = node.isCircular ? ' ⚠️ (Dependência Circular)' : '';
 
   return (
-    <div className="info-panel">
-      <h3 className={node.isCircular ? 'circular' : ''}>
+    <InfoPanelContainer>
+      <Title $isCircular={node.isCircular}>
         Informações do Nó{circularWarning}
-      </h3>
-      <p>
-        <span className="label">Arquivo:</span> {node.filePath}
-      </p>
-      <p>
-        <span className="label">Importa:</span> {getFileNames(node.imports)}
-      </p>
-      <p>
-        <span className="label">Importado por:</span> {getFileNames(node.importedBy)}
-      </p>
-    </div>
+      </Title>
+      <Text>
+        <Label>Arquivo:</Label> {node.filePath}
+      </Text>
+      <Text>
+        <Label>Importa:</Label> {getFileNames(node.imports)}
+      </Text>
+      <Text>
+        <Label>Importado por:</Label> {getFileNames(node.importedBy)}
+      </Text>
+    </InfoPanelContainer>
   );
 }

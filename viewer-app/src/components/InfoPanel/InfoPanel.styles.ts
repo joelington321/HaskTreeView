@@ -1,4 +1,6 @@
-.info-panel {
+import styled from 'styled-components';
+
+export const InfoPanelContainer = styled.div`
   position: fixed;
   bottom: 20px;
   left: 20px;
@@ -8,25 +10,21 @@
   padding: 15px;
   max-width: 300px;
   color: #fff;
-}
+`;
 
-.info-panel h3 {
+export const Title = styled.h3<{ $isCircular?: boolean }>`
   font-size: 16px;
   margin-bottom: 10px;
-  color: #0066cc;
-}
+  color: ${props => props.$isCircular ? '#ff3333' : '#0066cc'};
+`;
 
-.info-panel h3.circular {
-  color: #ff3333;
-}
-
-.info-panel p {
+export const Text = styled.p`
   font-size: 13px;
   margin: 5px 0;
   color: #ccc;
-}
+`;
 
-.info-panel .label {
+export const Label = styled.span`
   color: #888;
   font-weight: bold;
-}
+`;

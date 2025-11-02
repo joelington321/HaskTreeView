@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import './Controls.css';
+import { ControlsContainer, Label, FileInput, Button } from './Controls.styles';
 
 interface ControlsProps {
   onFileLoad: (file: File) => void;
@@ -18,17 +18,17 @@ export function Controls({ onFileLoad, onReset, onLoadExample }: ControlsProps) 
   };
 
   return (
-    <div className="controls">
-      <label htmlFor="fileInput">Carregar JSON:</label>
-      <input
+    <ControlsContainer>
+      <Label htmlFor="fileInput">Carregar JSON:</Label>
+      <FileInput
         ref={fileInputRef}
         type="file"
         id="fileInput"
         accept=".json"
         onChange={handleFileChange}
       />
-      <button onClick={onReset}>Resetar Visualização</button>
-      <button onClick={onLoadExample}>Carregar Exemplo</button>
-    </div>
+      <Button onClick={onReset}>Resetar Visualização</Button>
+      <Button onClick={onLoadExample}>Carregar Exemplo</Button>
+    </ControlsContainer>
   );
 }
