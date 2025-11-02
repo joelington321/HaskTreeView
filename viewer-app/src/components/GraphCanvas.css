@@ -1,0 +1,15 @@
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 160px);
+  overflow: auto;
+  background-color: #000;
+}
+
+.canvas-container canvas {
+  display: block;
+}
+
+.canvas-container canvas:active {
+  cursor: grabbing !important;
+}
