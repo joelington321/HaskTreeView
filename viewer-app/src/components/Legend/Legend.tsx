@@ -13,6 +13,19 @@ export function Legend() {
         <span>Nó em ciclo</span>
       </div>
       <div className="legend-item">
+        <div
+          className="legend-square"
+          style={{
+            backgroundColor: '#888',
+            borderRadius: '4px',
+            width: '20px',
+            height: '20px',
+            marginRight: '10px',
+          }}
+        ></div>
+        <span>Nó isolado (config)</span>
+      </div>
+      <div className="legend-item">
         <div className="legend-line" style={{ backgroundColor: '#fff' }}></div>
         <span>Dependência normal</span>
       </div>

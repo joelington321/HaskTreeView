@@ -12,8 +12,12 @@ export function calculateHierarchicalLayout(
   const nodes: GraphNode[] = [];
   let componentOffsetX = 0;
 
-  // Processar cada componente separadamente
-  components.forEach((component) => {
+  // Separar componentes conectados de nós isolados
+  const connectedComponents = components.filter((comp) => comp.nodes.length > 1);
+  const isolatedNodes = components.filter((comp) => comp.nodes.length === 1);
+
+  // Processar componentes conectados primeiro
+  connectedComponents.forEach((component) => {
     const componentDeps = data.dependencies.filter((dep) =>
       component.nodes.includes(dep.fileId)
     );
@@ -108,6 +112,31 @@ export function calculateHierarchicalLayout(
     // Avançar offset para o próximo componente
     componentOffsetX += maxWidth + config.componentSpacing;
   });
+
+  // Posicionar nós isolados (arquivos sem conexões) na parte inferior
+  if (isolatedNodes.length > 0) {
+    const isolatedY = -300; // Posição Y negativa (acima da árvore principal)
+    const isolatedSpacing = config.horizontalSpacing * 0.7; // Espaçamento menor
+    const totalIsolatedWidth = (isolatedNodes.length - 1) * isolatedSpacing;
+    const startIsolatedX = -totalIsolatedWidth / 2;
+
+    isolatedNodes.forEach((component, index) => {
+      const dep = data.dependencies.find((d) => d.fileId === component.nodes[0]);
+      if (!dep) return;
+
+      const filePath = data.fileRegistry[dep.fileId] || dep.fileId;
+      nodes.push({
+        id: dep.fileId,
+        x: startIsolatedX + index * isolatedSpacing,
+        y: isolatedY,
+        filePath: filePath,
+        imports: dep.imports,
+        importedBy: dep.importedBy,
+        isCircular: false,
+        componentIndex: component.index,
+      });
+    });
+  }
 
   return nodes;
 }

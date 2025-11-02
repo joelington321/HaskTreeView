@@ -284,23 +284,49 @@ function drawNode(
   isHovered: boolean
 ) {
   const opacity = isHighlighted ? 1.0 : 0.5;
+  const isIsolated = node.imports.length === 0 && node.importedBy.length === 0;
 
-  // Desenhar círculo
-  ctx.beginPath();
-  ctx.arc(node.x, node.y, config.nodeRadius, 0, Math.PI * 2);
+  // Desenhar círculo (ou quadrado para nós isolados)
+  if (isIsolated) {
+    // Nós isolados: desenhar como quadrado com bordas arredondadas
+    const size = config.nodeRadius * 1.4;
+    const cornerRadius = 4;
+    const x = node.x - size;
+    const y = node.y - size;
+    const width = size * 2;
+    const height = size * 2;
+
+    ctx.beginPath();
+    ctx.moveTo(x + cornerRadius, y);
+    ctx.lineTo(x + width - cornerRadius, y);
+    ctx.arcTo(x + width, y, x + width, y + cornerRadius, cornerRadius);
+    ctx.lineTo(x + width, y + height - cornerRadius);
+    ctx.arcTo(x + width, y + height, x + width - cornerRadius, y + height, cornerRadius);
+    ctx.lineTo(x + cornerRadius, y + height);
+    ctx.arcTo(x, y + height, x, y + height - cornerRadius, cornerRadius);
+    ctx.lineTo(x, y + cornerRadius);
+    ctx.arcTo(x, y, x + cornerRadius, y, cornerRadius);
+    ctx.closePath();
+  } else {
+    // Nós normais: círculo
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, config.nodeRadius, 0, Math.PI * 2);
+  }
 
   let fillColor: string;
   if (isHovered) {
     fillColor = config.nodeHoverColor;
   } else if (node.isCircular) {
     fillColor = config.nodeCircularColor;
+  } else if (isIsolated) {
+    fillColor = '#888'; // Cor cinza para nós isolados
   } else {
     fillColor = config.nodeColor;
   }
 
   ctx.fillStyle = applyOpacity(fillColor, opacity);
   ctx.fill();
-  ctx.strokeStyle = applyOpacity('#000', opacity);
+  ctx.strokeStyle = applyOpacity(isIsolated ? '#666' : '#000', opacity);
   ctx.lineWidth = 2;
   ctx.stroke();
 
