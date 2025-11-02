@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { GraphNode, CanvasConfig } from './types';
-import { useGraphData } from './hooks/useGraphData';
-import { useCanvasInteraction } from './hooks/useCanvasInteraction';
+import { useGraphData, useCanvasInteraction } from './hooks';
 import { Header } from './components/Header';
 import { Controls } from './components/Controls';
 import { GraphCanvas } from './components/GraphCanvas';
