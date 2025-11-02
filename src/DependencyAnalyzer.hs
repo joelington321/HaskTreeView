@@ -62,10 +62,10 @@ isExternalImport path =
     containsIgnoredPath path
     -- Se é uma biblioteca conhecida, é externo
     || any (\pkg -> pkg `isPrefixOf` path) knownExternalPackages
-    -- Se começa com @ mas não é path relativo, provavelmente é pacote scoped
-    || ("@" `isPrefixOf` path && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path))
-    -- Se é path relativo, é interno
-    && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path)
+    -- Se começa com @ mas não é path alias do projeto (@/), provavelmente é pacote scoped
+    || ("@" `isPrefixOf` path && not ("@/" `isPrefixOf` path) && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path))
+    -- Se é path relativo ou path alias, é interno
+    && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path || "@/" `isPrefixOf` path)
     -- Se começa com diretórios típicos de projeto, é interno
     && not (any (\prefix -> prefix `isPrefixOf` path) ["src/", "screens/", "components/", "services/", "utils/", "hooks/", "store/", "types/", "config/", "common/", "modules/", "assets/", "routes/"])
 
@@ -84,6 +84,11 @@ resolveImport rootDir currentFile importPath = do
                 then do
                     -- Path relativo
                     return $ normalise (currentDir </> importStr)
+                else if "@/" `isPrefixOf` importStr
+                then do
+                    -- Path alias TypeScript: @/ -> src/
+                    let aliasPath = drop 2 importStr  -- Remove "@/"
+                    return $ normalise (rootDir </> "src" </> aliasPath)
                 else do
                     -- Path absoluto baseado em src/ (preferido) ou root do projeto
                     let srcBasedPath = rootDir </> "src" </> importStr
