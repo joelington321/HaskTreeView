@@ -53,3 +53,28 @@ export const Button = styled.button`
     background-color: #0052a3;
   }
 `;
+
+export const Select = styled.select`
+  padding: 8px 15px;
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: border-color 0.3s;
+
+  &:hover {
+    border-color: #666;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #0066cc;
+  }
+
+  option {
+    background-color: #222;
+    color: #fff;
+  }
+`;

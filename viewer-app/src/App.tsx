@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraphNode, CanvasConfig } from './types';
+import { GraphNode, CanvasConfig, LayoutType } from './types';
 import { useGraphData, useCanvasInteraction } from './hooks';
 import { Header } from './components/Header';
 import { Controls } from './components/Controls';
@@ -25,8 +25,18 @@ const DEFAULT_CONFIG: CanvasConfig = {
 
 function App() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const { nodes, connections, stats, components, loadFromFile, loadFromUrl } =
-    useGraphData(DEFAULT_CONFIG);
+  const [layoutType, setLayoutType] = useState<LayoutType>('hierarchical');
+  
+  const { 
+    nodes, 
+    connections, 
+    stats, 
+    components, 
+    currentLayout,
+    loadFromFile, 
+    loadFromUrl,
+    changeLayout 
+  } = useGraphData(DEFAULT_CONFIG, layoutType);
 
   const { canvasRef, viewport, nodesWithHover, hoveredNodeId, resetView, handlers } =
     useCanvasInteraction({
@@ -38,6 +48,11 @@ function App() {
     loadFromUrl('../output/test-complex.json');
   };
 
+  const handleLayoutChange = (newLayout: LayoutType) => {
+    setLayoutType(newLayout);
+    changeLayout(newLayout);
+  };
+
   return (
     <>
       <GlobalStyles />
@@ -47,6 +62,8 @@ function App() {
           onFileLoad={loadFromFile}
           onReset={resetView}
           onLoadExample={handleLoadExample}
+          currentLayout={currentLayout}
+          onLayoutChange={handleLayoutChange}
         />
         <GraphCanvas
           canvasRef={canvasRef}

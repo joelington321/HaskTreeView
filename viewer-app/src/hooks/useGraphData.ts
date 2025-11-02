@@ -1,8 +1,15 @@
 import { useState, useCallback } from 'react';
-import { DependencyData, GraphNode, GraphConnection, GraphStats, ConnectedComponent, CanvasConfig } from '@/types';
+import { DependencyData, GraphNode, GraphConnection, GraphStats, ConnectedComponent, CanvasConfig, LayoutType } from '@/types';
 import { detectCycles, getNodesInCycles } from '@/utils/cycleDetection';
 import { findConnectedComponents } from '@/utils/componentDetection';
-import { calculateHierarchicalLayout, calculateCircularLayout } from '@/utils/layoutAlgorithms';
+import { 
+  calculateHierarchicalLayout, 
+  calculateCircularLayout,
+  calculateForceDirectedLayout,
+  calculateCircularCompleteLayout,
+  calculateRadialLayout,
+  calculateLayeredLayout
+} from '@/utils/layoutAlgorithms';
 
 const DEFAULT_CONFIG: CanvasConfig = {
   nodeRadius: 20,
@@ -17,7 +24,7 @@ const DEFAULT_CONFIG: CanvasConfig = {
   componentSpacing: 250,
 };
 
-export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG) {
+export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG, layoutType: LayoutType = 'hierarchical') {
   const [data, setData] = useState<DependencyData | null>(null);
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [connections, setConnections] = useState<GraphConnection[]>([]);
@@ -30,9 +37,10 @@ export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG) {
     analyzedAt: '-',
   });
   const [components, setComponents] = useState<ConnectedComponent[]>([]);
+  const [currentLayout, setCurrentLayout] = useState<LayoutType>(layoutType);
 
   const processData = useCallback(
-    (newData: DependencyData) => {
+    (newData: DependencyData, layout: LayoutType = currentLayout) => {
       setData(newData);
 
       // Detectar ciclos
@@ -42,19 +50,32 @@ export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG) {
       // Detectar componentes conectados
       const connectedComponents = findConnectedComponents(newData);
 
-      // Calcular layout
+      // Calcular layout com base no tipo selecionado
       let graphNodes: GraphNode[];
       
       // Se todos os nós estão em um ciclo, usar layout circular
-      if (nodesInCycles.size === newData.dependencies.length && cycles.length > 0) {
+      if (nodesInCycles.size === newData.dependencies.length && cycles.length > 0 && layout === 'circular') {
         graphNodes = calculateCircularLayout(newData, cycles[0].nodes);
       } else {
-        graphNodes = calculateHierarchicalLayout(
-          newData,
-          connectedComponents,
-          nodesInCycles,
-          config
-        );
+        // Selecionar algoritmo de layout
+        switch (layout) {
+          case 'force-directed':
+            graphNodes = calculateForceDirectedLayout(newData, connectedComponents, nodesInCycles, config);
+            break;
+          case 'circular':
+            graphNodes = calculateCircularCompleteLayout(newData, connectedComponents, nodesInCycles, config);
+            break;
+          case 'radial':
+            graphNodes = calculateRadialLayout(newData, connectedComponents, nodesInCycles, config);
+            break;
+          case 'layered':
+            graphNodes = calculateLayeredLayout(newData, connectedComponents, nodesInCycles, config);
+            break;
+          case 'hierarchical':
+          default:
+            graphNodes = calculateHierarchicalLayout(newData, connectedComponents, nodesInCycles, config);
+            break;
+        }
       }
 
       // Criar conexões
@@ -108,7 +129,17 @@ export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG) {
         analyzedAt: newData.analyzedAt,
       });
     },
-    [config]
+    [config, currentLayout]
+  );
+
+  const changeLayout = useCallback(
+    (newLayout: LayoutType) => {
+      setCurrentLayout(newLayout);
+      if (data) {
+        processData(data, newLayout);
+      }
+    },
+    [data, processData]
   );
 
   const loadFromFile = useCallback(
@@ -148,7 +179,9 @@ export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG) {
     connections,
     stats,
     components,
+    currentLayout,
     loadFromFile,
     loadFromUrl,
+    changeLayout,
   };
 }

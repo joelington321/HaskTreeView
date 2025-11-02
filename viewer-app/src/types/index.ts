@@ -68,3 +68,14 @@ export interface CanvasConfig {
   horizontalSpacing: number;
   componentSpacing: number;
 }
+
+export type LayoutType = 
+  | 'hierarchical'
+  | 'force-directed'
+  | 'circular'
+  | 'radial'
+  | 'layered';
+
+export interface LayoutConfig extends CanvasConfig {
+  layoutType: LayoutType;
+}
