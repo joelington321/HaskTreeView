@@ -16,6 +16,11 @@ allowedExtensions = Set.fromList
     , ".jsx"     -- JavaScript React
     , ".mjs"     -- JavaScript Module
     , ".cjs"     -- JavaScript CommonJS
+    , ".css"     -- CSS
+    , ".scss"    -- SASS/SCSS
+    , ".sass"    -- SASS
+    , ".less"    -- LESS
+    , ".styl"    -- Stylus
     ]
 
 -- | Verifica se uma extensão está na whitelist

@@ -77,7 +77,7 @@ resolveImport rootDir currentFile importPath = do
         then return Nothing
         else do
             let currentDir = takeDirectory currentFile
-                extensions = [".ts", ".tsx", ".js", ".jsx"]
+                extensions = [".ts", ".tsx", ".js", ".jsx", ".css", ".scss", ".sass", ".less", ".styl"]
                 
             -- Determinar o caminho base
             basePath <- if "./" `isPrefixOf` importStr || "../" `isPrefixOf` importStr

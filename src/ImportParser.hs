@@ -24,6 +24,8 @@ supportedImportFormats =
     [ "import "           -- import React from 'react'
     , "import{"          -- import{useState} from 'react'
     , "import {"         -- import { useState } from 'react'
+    , "import '"         -- import './styles.css' (direct import)
+    , "import \""        -- import \"./styles.css\" (direct import)
     , "export * from "   -- export * from './module'
     , "export { "        -- export { foo } from './module'
     , "const "           -- const React = require('react')
@@ -42,11 +44,17 @@ isImportLine line =
        && not ("//" `T.isPrefixOf` trimmed)  -- ignora comentários de linha
        && not ("/*" `T.isPrefixOf` trimmed)  -- ignora comentários de bloco
        && not ("*" `T.isPrefixOf` trimmed)   -- ignora comentários de bloco (dentro de bloco)
-       && (isEsImport trimmed || isExportFrom trimmed || isRequireImport trimmed)
+       && (isEsImport trimmed || isDirectImport trimmed || isExportFrom trimmed || isRequireImport trimmed)
   where
     -- Verifica se é um import ES6/TypeScript (import ... from ...)
     isEsImport :: Text -> Bool
     isEsImport txt = "import " `T.isPrefixOf` txt && "from" `T.isInfixOf` txt
+    
+    -- Verifica se é um import direto de asset (import './styles.css')
+    isDirectImport :: Text -> Bool
+    isDirectImport txt = "import " `T.isPrefixOf` txt 
+                      && not ("from" `T.isInfixOf` txt)
+                      && hasQuotes txt
     
     -- Verifica se é um re-export (export * from ... ou export { ... } from ...)
     isExportFrom :: Text -> Bool
@@ -58,12 +66,17 @@ isImportLine line =
         let hasKeyword = any (`T.isPrefixOf` txt) ["const ", "let ", "var "]
             hasRequire = "require(" `T.isInfixOf` txt
         in hasKeyword && hasRequire
+    
+    -- Verifica se a linha contém aspas (simples ou duplas)
+    hasQuotes :: Text -> Bool
+    hasQuotes txt = "'" `T.isInfixOf` txt || "\"" `T.isInfixOf` txt
 
 -- | Extrai o source do import de uma linha
 extractSource :: Text -> Maybe Text
 extractSource line
     | "from" `T.isInfixOf` line = extractFromClause line
     | "require(" `T.isInfixOf` line = extractRequire line
+    | "import " `T.isPrefixOf` T.strip line = extractDirectImport line
     | otherwise = Nothing
   where
     -- Extrai source de: import X from 'source' ou } from "source"
@@ -79,6 +92,12 @@ extractSource line
         case T.splitOn "require(" txt of
             (_:rest:_) -> extractQuoted rest
             _ -> Nothing
+    
+    -- Extrai source de: import './styles.css'
+    extractDirectImport :: Text -> Maybe Text
+    extractDirectImport txt =
+        let afterImport = T.strip $ T.drop 6 txt  -- Remove "import"
+        in extractQuoted afterImport
     
     -- Extrai texto entre aspas (simples ou duplas)
     extractQuoted :: Text -> Maybe Text
