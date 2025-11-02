@@ -24,6 +24,8 @@ supportedImportFormats =
     [ "import "           -- import React from 'react'
     , "import{"          -- import{useState} from 'react'
     , "import {"         -- import { useState } from 'react'
+    , "export * from "   -- export * from './module'
+    , "export { "        -- export { foo } from './module'
     , "const "           -- const React = require('react')
     , "let "             -- let React = require('react')
     , "var "             -- var React = require('react')
@@ -39,12 +41,16 @@ isImportLine line =
     in not (T.null trimmed) 
        && not ("//" `T.isPrefixOf` trimmed)  -- ignora comentários de linha
        && not ("/*" `T.isPrefixOf` trimmed)  -- ignora comentários de bloco
-       && not ("*" `T.isPrefixOf` trimmed)   -- ignora comentários de bloco
-       && (isEsImport trimmed || isRequireImport trimmed)
+       && not ("*" `T.isPrefixOf` trimmed)   -- ignora comentários de bloco (dentro de bloco)
+       && (isEsImport trimmed || isExportFrom trimmed || isRequireImport trimmed)
   where
     -- Verifica se é um import ES6/TypeScript (import ... from ...)
     isEsImport :: Text -> Bool
     isEsImport txt = "import " `T.isPrefixOf` txt && "from" `T.isInfixOf` txt
+    
+    -- Verifica se é um re-export (export * from ... ou export { ... } from ...)
+    isExportFrom :: Text -> Bool
+    isExportFrom txt = "export " `T.isPrefixOf` txt && "from" `T.isInfixOf` txt
     
     -- Verifica se é um require (const/let/var ... = require(...))
     isRequireImport :: Text -> Bool
