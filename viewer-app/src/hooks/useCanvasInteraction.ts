@@ -134,11 +134,31 @@ export function useCanvasInteraction({ nodes, onNodeClick }: UseCanvasInteractio
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
+    
+    if (!canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     
     setViewport((prev: ViewportState) => {
       const newScale = Math.max(0.1, Math.min(prev.scale * delta, 3));
-      return { ...prev, scale: newScale };
+      
+      // Calcular a posição do mouse no espaço do canvas (antes do zoom)
+      const mouseCanvasX = (mouseX - prev.offsetX) / prev.scale;
+      const mouseCanvasY = (mouseY - prev.offsetY) / prev.scale;
+      
+      // Calcular novos offsets para manter o mouse na mesma posição do canvas
+      const newOffsetX = mouseX - mouseCanvasX * newScale;
+      const newOffsetY = mouseY - mouseCanvasY * newScale;
+      
+      return {
+        scale: newScale,
+        offsetX: newOffsetX,
+        offsetY: newOffsetY,
+      };
     });
   }, []);
 
