@@ -9,7 +9,7 @@ import {
   calculateCircularCompleteLayout,
   calculateRadialLayout,
   calculateLayeredLayout
-} from '@/utils/layoutAlgorithms';
+} from '@/utils/layout';
 
 const DEFAULT_CONFIG: CanvasConfig = {
   nodeRadius: 20,
