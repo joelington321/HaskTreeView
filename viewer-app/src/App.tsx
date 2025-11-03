@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraphNode, CanvasConfig, LayoutType } from './types';
+import { GraphNode, LayoutType } from './types';
 import { useGraphData, useCanvasInteraction } from './hooks';
 import { Header } from './components/Header';
 import { Controls } from './components/Controls';
@@ -9,19 +9,7 @@ import { Stats } from './components/Stats';
 import { Legend } from './components/Legend';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { AppContainer } from './App.styles';
-
-const DEFAULT_CONFIG: CanvasConfig = {
-  nodeRadius: 20,
-  nodeColor: '#fff',
-  nodeHoverColor: '#0066cc',
-  nodeCircularColor: '#ff3333',
-  lineColor: '#fff',
-  lineCircularColor: '#ff3333',
-  lineWidth: 2,
-  verticalSpacing: 150,
-  horizontalSpacing: 200,
-  componentSpacing: 250,
-};
+import { DEFAULT_CANVAS_CONFIG } from './constants';
 
 function App() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -36,7 +24,7 @@ function App() {
     loadFromFile, 
     loadFromUrl,
     changeLayout 
-  } = useGraphData(DEFAULT_CONFIG, layoutType);
+  } = useGraphData(DEFAULT_CANVAS_CONFIG, layoutType);
 
   const { canvasRef, viewport, nodesWithHover, hoveredNodeId, resetView, handlers } =
     useCanvasInteraction({
@@ -72,7 +60,7 @@ function App() {
           components={components}
           viewport={viewport}
           hoveredNodeId={hoveredNodeId}
-          config={DEFAULT_CONFIG}
+          config={DEFAULT_CANVAS_CONFIG}
           handlers={handlers}
         />
         <InfoPanel node={selectedNode} nodes={nodes} />

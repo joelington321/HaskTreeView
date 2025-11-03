@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { GraphNode, GraphConnection, ConnectedComponent, ViewportState, CanvasConfig } from '@/types';
 import { applyOpacity, getFileName } from '@/utils/helpers';
+import { COMPONENT_COLORS, COMPONENT_BORDER_COLORS, UI_CONSTANTS } from '@/constants';
 import { CanvasContainer } from './GraphCanvas.styles';
 
 interface GraphCanvasProps {
@@ -19,26 +20,6 @@ interface GraphCanvasProps {
     onWheel: (e: React.WheelEvent<HTMLCanvasElement>) => void;
   };
 }
-
-const COMPONENT_COLORS = [
-  'rgba(0, 150, 255, 0.3)',
-  'rgba(255, 150, 0, 0.3)',
-  'rgba(0, 255, 150, 0.3)',
-  'rgba(255, 0, 150, 0.3)',
-  'rgba(150, 0, 255, 0.3)',
-  'rgba(255, 255, 0, 0.3)',
-  'rgba(0, 255, 255, 0.3)',
-];
-
-const COMPONENT_BORDER_COLORS = [
-  'rgba(0, 150, 255, 0.8)',
-  'rgba(255, 150, 0, 0.8)',
-  'rgba(0, 255, 150, 0.8)',
-  'rgba(255, 0, 150, 0.8)',
-  'rgba(150, 0, 255, 0.8)',
-  'rgba(255, 255, 0, 0.8)',
-  'rgba(0, 255, 255, 0.8)',
-];
 
 export function GraphCanvas({
   canvasRef,
@@ -128,7 +109,7 @@ function drawComponentBoundaries(
     const componentNodes = nodes.filter((node) => component.nodes.includes(node.id));
     if (componentNodes.length === 0) return;
 
-    const padding = 40;
+    const padding = UI_CONSTANTS.COMPONENT_BOUNDARY_PADDING;
     const minX = Math.min(...componentNodes.map((n) => n.x)) - padding;
     const maxX = Math.max(...componentNodes.map((n) => n.x)) + padding;
     const minY = Math.min(...componentNodes.map((n) => n.y)) - padding;
@@ -141,7 +122,7 @@ function drawComponentBoundaries(
     const strokeColor = COMPONENT_BORDER_COLORS[colorIndex];
 
     // Desenhar retângulo arredondado
-    const radius = 20;
+    const radius = UI_CONSTANTS.COMPONENT_BORDER_RADIUS;
     ctx.beginPath();
     ctx.moveTo(minX + radius, minY);
     ctx.lineTo(maxX - radius, minY);
@@ -158,17 +139,17 @@ function drawComponentBoundaries(
     ctx.fill();
 
     ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+    ctx.lineWidth = UI_CONSTANTS.COMPONENT_BORDER_WIDTH;
+    ctx.setLineDash(UI_CONSTANTS.DASH_PATTERN);
     ctx.stroke();
     ctx.setLineDash([]);
 
     // Desenhar label
     ctx.fillStyle = strokeColor;
-    ctx.font = 'bold 14px monospace';
+    ctx.font = `bold ${UI_CONSTANTS.COMPONENT_LABEL_FONT_SIZE}px ${UI_CONSTANTS.FONT_FAMILY}`;
     ctx.textAlign = 'center';
     const label = `Árvore ${component.index + 1} (${component.nodes.length} nós)`;
-    ctx.fillText(label, centerX, minY - 10);
+    ctx.fillText(label, centerX, minY + UI_CONSTANTS.COMPONENT_LABEL_VERTICAL_OFFSET);
   });
 }
 
@@ -179,7 +160,7 @@ function drawConnection(
   config: CanvasConfig,
   isHighlighted: boolean
 ) {
-  const opacity = isHighlighted ? 1.0 : 0.5;
+  const opacity = isHighlighted ? UI_CONSTANTS.HIGHLIGHTED_OPACITY : UI_CONSTANTS.UNHIGHLIGHTED_OPACITY;
   const baseColor = conn.isCircular ? config.lineCircularColor : config.lineColor;
   ctx.strokeStyle = applyOpacity(baseColor, opacity);
   ctx.fillStyle = applyOpacity(baseColor, opacity);
@@ -190,7 +171,7 @@ function drawConnection(
 
   if (conn.isBidirectional) {
     // Linha dupla para bidirecionais
-    const spacing = 4;
+    const spacing = UI_CONSTANTS.BIDIRECTIONAL_LINE_SPACING;
     const perpX = -Math.sin(angle) * spacing;
     const perpY = Math.cos(angle) * spacing;
 
@@ -214,8 +195,8 @@ function drawConnection(
     ctx.stroke();
 
     // Desenhar setas
-    const arrowSize = 12;
-    const arrowSpread = Math.PI / 6;
+    const arrowSize = UI_CONSTANTS.ARROW_SIZE_BIDIRECTIONAL;
+    const arrowSpread = UI_CONSTANTS.ARROW_SPREAD;
 
     // Seta 1
     const arrow1X = finishX + perpX;
@@ -258,8 +239,8 @@ function drawConnection(
     ctx.stroke();
 
     // Desenhar seta
-    const arrowSize = 10;
-    const arrowSpread = Math.PI / 6;
+    const arrowSize = UI_CONSTANTS.ARROW_SIZE;
+    const arrowSpread = UI_CONSTANTS.ARROW_SPREAD;
     ctx.beginPath();
     ctx.moveTo(endX, endY);
     ctx.lineTo(
@@ -283,14 +264,14 @@ function drawNode(
   isHighlighted: boolean,
   isHovered: boolean
 ) {
-  const opacity = isHighlighted ? 1.0 : 0.5;
+  const opacity = isHighlighted ? UI_CONSTANTS.HIGHLIGHTED_OPACITY : UI_CONSTANTS.UNHIGHLIGHTED_OPACITY;
   const isIsolated = node.imports.length === 0 && node.importedBy.length === 0;
 
   // Desenhar círculo (ou quadrado para nós isolados)
   if (isIsolated) {
     // Nós isolados: desenhar como quadrado com bordas arredondadas
-    const size = config.nodeRadius * 1.4;
-    const cornerRadius = 4;
+    const size = config.nodeRadius * UI_CONSTANTS.ISOLATED_NODE_SIZE_MULTIPLIER;
+    const cornerRadius = UI_CONSTANTS.NODE_CORNER_RADIUS;
     const x = node.x - size;
     const y = node.y - size;
     const width = size * 2;
@@ -319,22 +300,22 @@ function drawNode(
   } else if (node.isCircular) {
     fillColor = config.nodeCircularColor;
   } else if (isIsolated) {
-    fillColor = '#888'; // Cor cinza para nós isolados
+    fillColor = UI_CONSTANTS.ISOLATED_NODE_COLOR;
   } else {
     fillColor = config.nodeColor;
   }
 
   ctx.fillStyle = applyOpacity(fillColor, opacity);
   ctx.fill();
-  ctx.strokeStyle = applyOpacity(isIsolated ? '#666' : '#000', opacity);
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = applyOpacity(isIsolated ? UI_CONSTANTS.ISOLATED_NODE_BORDER_COLOR : '#000', opacity);
+  ctx.lineWidth = UI_CONSTANTS.NODE_BORDER_WIDTH;
   ctx.stroke();
 
   // Desenhar texto
   const textColor = node.isCircular ? config.nodeCircularColor : '#fff';
   ctx.fillStyle = applyOpacity(textColor, opacity);
-  ctx.font = '12px monospace';
+  ctx.font = `${UI_CONSTANTS.FILE_NAME_FONT_SIZE}px ${UI_CONSTANTS.FONT_FAMILY}`;
   ctx.textAlign = 'center';
   const fileName = getFileName(node.filePath);
-  ctx.fillText(fileName, node.x, node.y + config.nodeRadius + 15);
+  ctx.fillText(fileName, node.x, node.y + config.nodeRadius + UI_CONSTANTS.FILE_NAME_VERTICAL_OFFSET);
 }

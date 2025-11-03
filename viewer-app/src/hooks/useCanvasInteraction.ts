@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { GraphNode, ViewportState } from '@/types';
+import { UI_CONSTANTS } from '@/constants';
 
 interface UseCanvasInteractionProps {
   nodes: GraphNode[];
@@ -41,13 +42,13 @@ export function useCanvasInteraction({ nodes, onNodeClick }: UseCanvasInteractio
       
       setViewport({
         offsetX: canvas.width / 2 - centerX,
-        offsetY: 100,
+        offsetY: UI_CONSTANTS.INITIAL_VIEWPORT_OFFSET_Y,
         scale: 1,
       });
     } else {
       setViewport({
         offsetX: canvas.width / 2,
-        offsetY: 100,
+        offsetY: UI_CONSTANTS.INITIAL_VIEWPORT_OFFSET_Y,
         scale: 1,
       });
     }
@@ -141,10 +142,10 @@ export function useCanvasInteraction({ nodes, onNodeClick }: UseCanvasInteractio
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const delta = e.deltaY > 0 ? UI_CONSTANTS.ZOOM_FACTOR : UI_CONSTANTS.ZOOM_FACTOR_INVERSE;
     
     setViewport((prev: ViewportState) => {
-      const newScale = Math.max(0.1, Math.min(prev.scale * delta, 3));
+      const newScale = Math.max(UI_CONSTANTS.ZOOM_MIN, Math.min(prev.scale * delta, UI_CONSTANTS.ZOOM_MAX));
       
       // Calcular a posição do mouse no espaço do canvas (antes do zoom)
       const mouseCanvasX = (mouseX - prev.offsetX) / prev.scale;

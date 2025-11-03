@@ -1,6 +1,7 @@
 import { DependencyData, GraphNode, ConnectedComponent, CanvasConfig } from '@/types';
 import { createGraphNode, separateComponents, getComponentDependencies, findRootNodes } from './nodeHelpers';
 import { calculateDepthMap, groupNodesByDepth, calculateMaxWidth } from './depthCalculation';
+import { UI_CONSTANTS } from '@/constants';
 
 /**
  * Layout Hierárquico: Organiza nós em camadas baseado em dependências
@@ -51,8 +52,8 @@ export function calculateHierarchicalLayout(
 
   // Posicionar nós isolados
   if (isolated.length > 0) {
-    const isolatedY = -300;
-    const isolatedSpacing = config.horizontalSpacing * 0.7;
+    const isolatedY = UI_CONSTANTS.ISOLATED_NODES_Y_POSITION;
+    const isolatedSpacing = config.horizontalSpacing * UI_CONSTANTS.ISOLATED_NODES_SPACING_MULTIPLIER;
     const totalIsolatedWidth = (isolated.length - 1) * isolatedSpacing;
     const startIsolatedX = -totalIsolatedWidth / 2;
 

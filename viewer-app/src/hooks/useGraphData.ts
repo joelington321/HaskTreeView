@@ -10,21 +10,9 @@ import {
   calculateRadialLayout,
   calculateLayeredLayout
 } from '@/utils/layout';
+import { DEFAULT_CANVAS_CONFIG } from '@/constants';
 
-const DEFAULT_CONFIG: CanvasConfig = {
-  nodeRadius: 20,
-  nodeColor: '#fff',
-  nodeHoverColor: '#0066cc',
-  nodeCircularColor: '#ff3333',
-  lineColor: '#fff',
-  lineCircularColor: '#ff3333',
-  lineWidth: 2,
-  verticalSpacing: 150,
-  horizontalSpacing: 200,
-  componentSpacing: 250,
-};
-
-export function useGraphData(config: CanvasConfig = DEFAULT_CONFIG, layoutType: LayoutType = 'hierarchical') {
+export function useGraphData(config: CanvasConfig = DEFAULT_CANVAS_CONFIG, layoutType: LayoutType = 'hierarchical') {
   const [data, setData] = useState<DependencyData | null>(null);
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [connections, setConnections] = useState<GraphConnection[]>([]);
