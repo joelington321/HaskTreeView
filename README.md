@@ -22,11 +22,10 @@ Aplicação React moderna para visualizar a árvore de dependências de forma in
 
 ```bash
 cd viewer-app
-npm install
-npm run dev
+yarn install
+yarn dev
 ```
 
-Acesse: http://localhost:3000
 
 **Documentação completa:** [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 
@@ -89,7 +88,6 @@ HaskTreeView/
 ├── test/                   # Testes Haskell
 ├── output/                 # JSONs gerados
 ├── fakePathTestTree/       # Projeto de teste
-├── viewer.html             # ❌ Viewer antigo (deprecated)
 └── viewer-app/             # ✅ Viewer novo (React + TS + Vite)
     ├── src/
     │   ├── components/     # Componentes React
@@ -126,10 +124,44 @@ HaskTreeView/
 
 ---
 
-## 📄 Licença
+## �️ Roadmap - Evolução Planejada
+
+### 🔄 Melhorias na Arquitetura
+
+#### **Detecção de Ciclos no Backend**
+- [ ] **Refatorar arquitetura do JSON** - Mover detecção de dependências circulares para o Haskell
+- [ ] Adicionar campo `cycles` no JSON de saída
+- [ ] Pré-calcular ciclos durante análise estática
+- [ ] Melhorar performance do frontend removendo cálculos redundantes
+
+#### **Análise de Código Morto**
+- [ ] **Rastreamento de funções não utilizadas**
+  - [ ] Detectar exports que nunca são importados
+  - [ ] Identificar funções internas não referenciadas
+  - [ ] Gerar relatório de código morto
+  - [ ] Sugestões de limpeza automatizada
+
+### 🎨 Melhorias no Visualizador
+
+#### **Interface e UX**
+- [ ] Dashboard com métricas do projeto
+- [ ] Filtros avançados (por tipo, tamanho, dependências)
+- [ ] Busca e navegação por arquivos
+- [ ] Exportação para PNG/SVG
+- [ ] Temas customizáveis (dark/light)
+- [ ] Comparação entre versões do projeto
+
+#### **Visualizações Adicionais**
+- [ ] Mapa de calor (arquivos mais conectados)
+
+### 🌐 Suporte Multi-Linguagem
+
+#### **Linguagens Planejadas**
+- [ ] **Haskell** - Auto-análise do próprio projeto
+- [ ] **Python** - Import tracking
+---
+
+## �📄 Licença
 
 Este projeto está sob licença MIT.
 
-## 🤝 Contribuindo
-
-Pull requests são bem-vindos! Para mudanças maiores, abra uma issue primeiro para discutir o que você gostaria de mudar.
