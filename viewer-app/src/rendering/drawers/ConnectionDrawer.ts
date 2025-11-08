@@ -1,6 +1,6 @@
 import { GraphConnection, CanvasConfig } from '@/types';
 import { UI_CONSTANTS } from '@/constants';
-import { applyOpacity, calculateAngle, drawArrow } from '../utils/canvasUtils';
+import { applyOpacity, calculateAngle, drawArrow } from '@/utils/canvasUtils';
 
 /**
  * Classe responsável por desenhar conexões entre nós

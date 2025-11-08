@@ -1,6 +1,6 @@
 import { GraphNode, CanvasConfig } from '@/types';
 import { UI_CONSTANTS } from '@/constants';
-import { applyOpacity, drawRoundedRect } from '../utils/canvasUtils';
+import { applyOpacity, drawRoundedRect } from '@/utils/canvasUtils';
 import { getFileName } from '@/utils/helpers';
 
 /**

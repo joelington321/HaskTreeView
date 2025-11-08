@@ -1,6 +1,6 @@
 import { GraphNode, ConnectedComponent } from '@/types';
 import { COMPONENT_COLORS, COMPONENT_BORDER_COLORS, UI_CONSTANTS } from '@/constants';
-import { drawRoundedRect } from '../utils/canvasUtils';
+import { drawRoundedRect } from '@/utils/canvasUtils';
 
 /**
  * Classe responsável por desenhar contornos de componentes conectados
