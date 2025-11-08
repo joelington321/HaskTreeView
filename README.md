@@ -40,11 +40,28 @@ yarn dev
 
 ---
 
-## Pasta de Testes
+## 🧪 Projeto de Teste e Análise
 
-A pasta `fakePathTestTree/` contém um projeto React Native fictício usado para testar a aplicação Haskell. 
-Estes arquivos são exemplos simulados e servem apenas como dados de entrada para validar a funcionalidade 
-do analisador de código.
+O próprio **`viewer-app/`** é usado como projeto de teste para o analisador Haskell!
+
+### Por que usar o viewer como teste?
+
+- ✅ **Projeto real** - Código de produção, não simulado
+- ✅ **Complexidade adequada** - Múltiplos componentes, hooks e utilitários
+- ✅ **Auto-análise** - O visualizador pode analisar sua própria estrutura
+- ✅ **Validação contínua** - Cada refatoração gera novos dados de teste
+- ✅ **Casos reais** - Dependências circulares, componentes isolados, etc.
+
+### Como analisar o viewer
+
+```bash
+# Configure o analisador para o viewer-app
+stack exec HaskTreeView-exe 
+
+# O JSON será gerado em output/
+# Abra o visualizador para ver a análise do próprio viewer!
+```
+
 
 ---
 
@@ -87,7 +104,6 @@ HaskTreeView/
 ├── src/                    # Código-fonte Haskell
 ├── test/                   # Testes Haskell
 ├── output/                 # JSONs gerados
-├── fakePathTestTree/       # Projeto de teste
 └── viewer-app/             # ✅ Viewer novo (React + TS + Vite)
     ├── src/
     │   ├── components/     # Componentes React
