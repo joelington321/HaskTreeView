@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { ControlsContainer, Label, FileInput, Button, Select } from './Controls.styles';
-import type { LayoutType } from '../../types';
+import type { LayoutType } from '../../../types';
 
 interface ControlsProps {
   onFileLoad: (file: File) => void;

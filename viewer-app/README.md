@@ -4,6 +4,7 @@ Visualizador moderno de dependências de projeto construído com **React + TypeS
 
 ## 🎯 Características
 
+- ✅ **Atomic Design** - Arquitetura escalável e organizada
 - ✅ **Componentização React** - Código modular e reutilizável
 - ✅ **TypeScript** - Tipagem forte para maior confiabilidade
 - ✅ **Vite** - Build ultra-rápido com hot reload
@@ -12,36 +13,45 @@ Visualizador moderno de dependências de projeto construído com **React + TypeS
 - ✅ **Árvores Desconexas** - Visualiza componentes isolados
 - ✅ **Interatividade** - Zoom, pan, hover e click nos nós
 
-## 📁 Estrutura do Projeto
+## 📁 Estrutura do Projeto (Atomic Design)
 
 ```
 viewer-app/
 ├── src/
-│   ├── components/          # Componentes React
-│   │   ├── Header.tsx       # Cabeçalho da aplicação
-│   │   ├── Controls.tsx     # Controles de carregamento
-│   │   ├── GraphCanvas.tsx  # Canvas de renderização
-│   │   ├── InfoPanel.tsx    # Painel de informações do nó
-│   │   ├── Stats.tsx        # Estatísticas do projeto
-│   │   └── Legend.tsx       # Legenda visual
+│   ├── screens/             # 🖥️ Páginas completas
+│   │   └── DashboardScreen.tsx
+│   ├── components/
+│   │   ├── atoms/           # ⚛️ Componentes básicos
+│   │   │   ├── Header/      # Cabeçalho
+│   │   │   ├── Legend/      # Legenda
+│   │   │   └── Stats/       # Estatísticas
+│   │   ├── molecules/       # 🧬 Combinação de átomos
+│   │   │   ├── Controls/    # Controles de carregamento
+│   │   │   └── InfoPanel/   # Painel de informações
+│   │   └── organisms/       # 🦠 Seções complexas
+│   │       └── GraphCanvas/ # Canvas de renderização
 │   ├── hooks/               # Hooks customizados
 │   │   ├── useGraphData.ts        # Processamento de dados
 │   │   └── useCanvasInteraction.ts # Interação com canvas
 │   ├── utils/               # Utilitários
 │   │   ├── cycleDetection.ts      # Detecção de ciclos
 │   │   ├── componentDetection.ts  # Detecção de componentes
-│   │   ├── layoutAlgorithms.ts    # Algoritmos de layout
-│   │   └── helpers.ts             # Funções auxiliares
+│   │   ├── helpers.ts             # Funções auxiliares
+│   │   └── layout/                # Algoritmos de layout
+│   ├── rendering/           # Sistema de renderização
+│   ├── constants/           # Constantes
 │   ├── types/               # Definições TypeScript
-│   │   └── index.ts
+│   ├── styles/              # Estilos globais
 │   ├── App.tsx              # Componente principal
-│   ├── App.css              # Estilos globais
 │   └── main.tsx             # Ponto de entrada
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
+├── ATOMIC_DESIGN.md         # 📘 Documentação Atomic Design
 └── README.md
 ```
+
+**📘 [Ver documentação completa do Atomic Design](ATOMIC_DESIGN.md)**
 
 ## 🚀 Como Usar
 
