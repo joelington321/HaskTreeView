@@ -4,6 +4,7 @@
 module DependencyAnalyzer
     ( AnalysisResult(..)
     , FileNode(..)
+    , UnusedStyle(..)
     , analyzeDependencies
     , isExternalImport  -- Exportando para testes
     ) where
@@ -11,13 +12,15 @@ module DependencyAnalyzer
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import Data.Text (Text)
-import Data.List (isPrefixOf)
-import System.FilePath (takeDirectory, (</>), normalise, makeRelative, takeFileName, splitDirectories)
+import Data.List (isPrefixOf, isSuffixOf)
+import System.FilePath (takeDirectory, (</>), normalise, makeRelative, takeFileName, splitDirectories, takeExtension)
 import System.Directory (canonicalizePath, doesFileExist)
 import GHC.Generics (Generic)
-import Data.Aeson (ToJSON, object, (.=))
+import Data.Aeson (ToJSON, object, (.=), toJSON)
+import qualified Data.Aeson as Aeson
 
 import ImportParser (parseImports, ImportStatement(..), importSource)
+import qualified StyleUsageAnalyzer as Style
 
 -- | Pastas que devem ser ignoradas (sempre externas)
 ignoredPaths :: [String]
@@ -40,15 +43,37 @@ data FileNode = FileNode
 
 instance ToJSON FileNode
 
+-- | Informação sobre estilo não utilizado
+data UnusedStyle = UnusedStyle
+    { unusedStyleName :: Text
+    , unusedStyleFile :: Text
+    , unusedImportType :: Text
+    } deriving (Show, Eq, Generic)
+
+instance ToJSON UnusedStyle where
+    toJSON us = object
+        [ "name" .= unusedStyleName us
+        , "file" .= unusedStyleFile us
+        , "importType" .= unusedImportType us
+        ]
+
 -- | Resultado completo da análise
 data AnalysisResult = AnalysisResult
     { projectName :: Text
     , analyzedAt :: Text
     , fileRegistry :: Map.Map Text Text
     , dependencies :: [FileNode]
+    , unusedStyles :: [UnusedStyle]
     } deriving (Show, Generic)
 
-instance ToJSON AnalysisResult
+instance ToJSON AnalysisResult where
+    toJSON ar = object
+        [ "projectName" .= projectName ar
+        , "analyzedAt" .= analyzedAt ar
+        , "fileRegistry" .= fileRegistry ar
+        , "dependencies" .= dependencies ar
+        , "unusedStyles" .= unusedStyles ar
+        ]
 
 -- | Verifica se um path contém diretórios ignorados
 containsIgnoredPath :: FilePath -> Bool
@@ -138,12 +163,37 @@ analyzeDependencies rootDir files = do
     -- Calcular importedBy
     let finalNodes = calculateImportedBy fileNodes
     
+    -- Analisar estilos não utilizados
+    let styleFiles = filter isStyleFile absFiles
+    unusedStylesList <- analyzeUnusedStyles styleFiles
+    
     return $ AnalysisResult
         { projectName = T.pack $ takeFileName absRootDir
-        , analyzedAt = "2025-11-01T00:00:00Z"
+        , analyzedAt = "2025-11-11T00:00:00Z"
         , fileRegistry = fileRegistry
         , dependencies = finalNodes
+        , unusedStyles = unusedStylesList
         }
+
+-- | Verifica se um arquivo é um arquivo de estilos
+isStyleFile :: FilePath -> Bool
+isStyleFile path = ".styles.ts" `isSuffixOf` path || ".styles.tsx" `isSuffixOf` path
+
+-- | Analisa estilos não utilizados
+analyzeUnusedStyles :: [FilePath] -> IO [UnusedStyle]
+analyzeUnusedStyles styleFiles = do
+    allUnused <- Style.findUnusedStyles styleFiles
+    return $ concatMap convertReports allUnused
+  where
+    convertReports :: (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]
+    convertReports (filePath, reports) =
+        [ UnusedStyle
+            { unusedStyleName = Style.styleName report
+            , unusedStyleFile = T.pack filePath
+            , unusedImportType = Style.importType report
+            }
+        | report <- reports
+        ]
 
 -- | Cria o registry de arquivos
 createRegistry :: FilePath -> [FilePath] -> Map.Map Text Text

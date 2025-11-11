@@ -41,6 +41,13 @@ export const LegendSquare = styled.div`
   margin-right: 10px;
   background-color: #888;
 `;
+export const LegendTest= styled.div`
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  margin-right: 10px;
+  background-color: #888;
+`;
 
 export const LegendLine = styled.div<{ $color: string }>`
   width: 30px;

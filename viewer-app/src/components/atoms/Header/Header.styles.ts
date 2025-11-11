@@ -17,3 +17,11 @@ export const Subtitle = styled.p`
   color: #888;
   font-size: 14px;
 `;
+
+export const Logo = styled.img`
+  height: 40px; 
+`;
+
+export const NavBar = styled.nav`
+  margin-top: 10px;
+`;

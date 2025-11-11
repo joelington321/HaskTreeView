@@ -29,6 +29,7 @@ library
       ImportParser
       JsonGenerator
       Lib
+      StyleUsageAnalyzer
   other-modules:
       Paths_HaskTreeView
   hs-source-dirs:
