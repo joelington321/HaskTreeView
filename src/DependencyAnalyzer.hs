@@ -190,7 +190,7 @@ analyzeDependencies rootDir files = do
     let styleFiles = filter isStyleFile absFiles
     let styleCount = length styleFiles
     putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos..."
-    unusedStylesList <- analyzeUnusedStyles styleFiles fileToId
+    unusedStylesList <- analyzeUnusedStyles absRootDir styleFiles fileToId
     
     -- Analisar exports não utilizados (todos os arquivos)
     putStrLn "   - Verificando uso de exports..."
@@ -210,9 +210,9 @@ isStyleFile :: FilePath -> Bool
 isStyleFile path = ".styles.ts" `isSuffixOf` path || ".styles.tsx" `isSuffixOf` path
 
 -- | Analisa estilos não utilizados
-analyzeUnusedStyles :: [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
-analyzeUnusedStyles styleFiles fileToId = do
-    allUnused <- Style.findUnusedStyles styleFiles
+analyzeUnusedStyles :: FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
+analyzeUnusedStyles rootDir styleFiles fileToId = do
+    allUnused <- Style.findUnusedStyles rootDir styleFiles
     return $ concatMap (convertReports fileToId) allUnused
   where
     convertReports :: Map.Map FilePath Text -> (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]

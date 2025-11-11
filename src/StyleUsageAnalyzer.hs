@@ -11,10 +11,11 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Data.Text (Text)
 import Data.List (isPrefixOf, find, isSuffixOf)
-import System.FilePath (takeExtension, takeDirectory, (</>))
+import System.FilePath (takeExtension, takeDirectory, (</>), makeRelative)
 import qualified Data.Map.Strict as Map
 import Control.Monad (filterM, forM)
 import System.Directory (doesFileExist)
+import FileFilter (getFilteredFiles)
 
 -- | Representa um export de styled-component
 data StyleExport = StyleExport
@@ -34,13 +35,13 @@ data StyleUsageReport = StyleUsageReport
     } deriving (Show, Eq)
 
 -- | Analisa o uso de styled-components em um arquivo de estilos
-analyzeStyleUsage :: FilePath -> IO [StyleUsageReport]
-analyzeStyleUsage styleFilePath = do
+analyzeStyleUsage :: FilePath -> FilePath -> IO [StyleUsageReport]
+analyzeStyleUsage rootDir styleFilePath = do
     -- Extrair todos os exports do arquivo de estilos
     exports <- extractStyleExports styleFilePath
     
-    -- Encontrar arquivos que importam este arquivo de estilos
-    importers <- findImporters styleFilePath
+    -- Encontrar arquivos que importam este arquivo de estilos em todo o projeto
+    importers <- findImportersInProject rootDir styleFilePath
     
     -- Para cada export, verificar se é usado
     mapM (checkUsage importers) exports
@@ -75,60 +76,78 @@ extractStyleExports filePath = do
             name = T.takeWhile (/= '=') afterConst
         in T.strip name
 
--- | Encontra arquivos que importam o arquivo de estilos
-findImporters :: FilePath -> IO [FilePath]
-findImporters styleFilePath = do
-    -- Buscar arquivos .tsx e .ts no mesmo diretório
-    let dir = takeDirectory styleFilePath
-        baseName = getStyleBaseName styleFilePath
-    
-    -- Procurar por arquivos que podem importar este estilo
-    -- Primeiro verificar arquivo com mesmo nome no mesmo diretório
-    let possibleImporters = 
-            [ dir </> baseName ++ ".tsx"
-            , dir </> baseName ++ ".ts"
-            ]
-    
-    existingFiles <- filterM doesFileExist possibleImporters
+-- | Encontra arquivos que importam o arquivo de estilos em todo o projeto
+findImportersInProject :: FilePath -> FilePath -> IO [FilePath]
+findImportersInProject rootDir styleFilePath = do
+    -- Buscar todos os arquivos .tsx e .ts no projeto
+    allFiles <- getFilteredFiles rootDir
+    let jsFiles = filter (\f -> takeExtension f `elem` [".tsx", ".ts", ".js", ".jsx"]) allFiles
     
     -- Filtrar apenas arquivos que realmente importam o estilo
-    actualImporters <- filterM (importsStyle styleFilePath) existingFiles
+    actualImporters <- filterM (importsStyleFile rootDir styleFilePath) jsFiles
     
     return actualImporters
-  where
-    -- Remove .styles.ts ou .styles.tsx do nome do arquivo
-    -- Exemplo: "Legend.styles.ts" -> "Legend"
-    getStyleBaseName :: FilePath -> String
-    getStyleBaseName path =
-        let fileName = reverse $ takeWhile (\c -> c /= '/' && c /= '\\') $ reverse path
-            -- Se termina com .styles.ts, remove 10 caracteres
-            -- Se termina com .styles.tsx, remove 11 caracteres
-        in if ".styles.tsx" `isSuffixOf` fileName
-           then take (length fileName - 11) fileName
-           else if ".styles.ts" `isSuffixOf` fileName
-           then take (length fileName - 10) fileName
-           else fileName
 
 -- | Verifica se um arquivo importa o arquivo de estilos
-importsStyle :: FilePath -> FilePath -> IO Bool
-importsStyle styleFile targetFile = do
+importsStyleFile :: FilePath -> FilePath -> FilePath -> IO Bool
+importsStyleFile rootDir styleFile targetFile = do
     content <- TIO.readFile targetFile
-    let styleBaseName = T.pack $ getStyleFileName styleFile
-    -- Verificar em todo o conteúdo (não linha por linha) para suportar imports multi-linha
-    return $ ("import" `T.isInfixOf` content)
-          && ("from" `T.isInfixOf` content)
-          && (styleBaseName `T.isInfixOf` content)
-  where
-    getStyleFileName :: FilePath -> String
-    getStyleFileName path =
-        let fileName = reverse $ takeWhile (\c -> c /= '/' && c /= '\\') $ reverse path
-            -- Remove a extensão completa: .styles.ts ou .styles.tsx
-            withoutExt = if ".styles.tsx" `isSuffixOf` fileName
-                        then take (length fileName - 11) fileName
-                        else if ".styles.ts" `isSuffixOf` fileName
-                        then take (length fileName - 10) fileName
-                        else fileName
-        in withoutExt ++ ".styles"
+    let styleRelativePath = makeRelative rootDir styleFile
+        -- Gerar possíveis caminhos de import
+        possibleImportPaths = generateImportPaths rootDir targetFile styleFile
+    
+    -- Verificar se algum dos caminhos possíveis está no conteúdo
+    return $ any (\path -> isImportPresent content path) possibleImportPaths
+
+-- | Gera possíveis caminhos de import baseado nos arquivos
+generateImportPaths :: FilePath -> FilePath -> FilePath -> [Text]
+generateImportPaths rootDir fromFile toFile =
+    let fromDir = takeDirectory fromFile
+        toPath = toFile
+        -- Remover extensão do arquivo de destino
+        toPathNoExt = if ".styles.ts" `isSuffixOf` toPath
+                      then take (length toPath - 10) toPath ++ ".styles"
+                      else if ".styles.tsx" `isSuffixOf` toPath  
+                      then take (length toPath - 11) toPath ++ ".styles"
+                      else toPath
+        
+        -- Calcular caminho relativo
+        relativePath = makeRelative fromDir toPathNoExt
+        
+        -- Normalizar para import path (usar / ao invés de \)
+        normalizedPath = map (\c -> if c == '\\' then '/' else c) relativePath
+        
+        -- Calcular caminho absoluto baseado em src/
+        srcRelativePath = makeRelative (rootDir </> "src") toPathNoExt
+        srcNormalizedPath = map (\c -> if c == '\\' then '/' else c) srcRelativePath
+        
+        -- Calcular caminho absoluto baseado no root
+        rootRelativePath = makeRelative rootDir toPathNoExt  
+        rootNormalizedPath = map (\c -> if c == '\\' then '/' else c) rootRelativePath
+        
+        -- Gerar variações do caminho
+        variations = [ T.pack normalizedPath
+                     , T.pack ("./" ++ normalizedPath)
+                     , T.pack ("../" ++ normalizedPath)
+                     -- Caminhos absolutos baseados em src/ (mais comum em projetos React/RN)
+                     , T.pack srcNormalizedPath
+                     , T.pack ("./" ++ srcNormalizedPath)
+                     -- Caminhos absolutos do root do projeto
+                     , T.pack rootNormalizedPath
+                     , T.pack ("./" ++ rootNormalizedPath)
+                     ]
+        
+        -- Remover duplicatas e caminhos vazios
+        uniqueVariations = filter (not . T.null) $ map T.strip variations
+    in uniqueVariations
+
+-- | Verifica se um import está presente no conteúdo
+isImportPresent :: Text -> Text -> Bool
+isImportPresent content importPath =
+    let cleanContent = T.unwords $ T.words content  -- Remove quebras de linha extras
+    in ("import" `T.isInfixOf` cleanContent) 
+       && ("from" `T.isInfixOf` cleanContent)
+       && (importPath `T.isInfixOf` cleanContent)
 
 -- | Verifica se um export de estilo é usado
 checkUsage :: [FilePath] -> StyleExport -> IO StyleUsageReport
@@ -217,12 +236,12 @@ detectImportType filePath export = do
              else "unknown"
 
 -- | Encontra estilos não utilizados em um conjunto de arquivos
-findUnusedStyles :: [FilePath] -> IO [(FilePath, [StyleUsageReport])]
-findUnusedStyles styleFiles = do
-    reports <- mapM analyzeStyleFile styleFiles
+findUnusedStyles :: FilePath -> [FilePath] -> IO [(FilePath, [StyleUsageReport])]
+findUnusedStyles rootDir styleFiles = do
+    reports <- mapM (analyzeStyleFile rootDir) styleFiles
     return [(file, filter (not . isUsed) report) | (file, report) <- reports, not (null (filter (not . isUsed) report))]
   where
-    analyzeStyleFile :: FilePath -> IO (FilePath, [StyleUsageReport])
-    analyzeStyleFile file = do
-        report <- analyzeStyleUsage file
+    analyzeStyleFile :: FilePath -> FilePath -> IO (FilePath, [StyleUsageReport])
+    analyzeStyleFile root file = do
+        report <- analyzeStyleUsage root file
         return (file, report)
