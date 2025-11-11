@@ -1,6 +1,6 @@
 import * as S from './UnusedPanel.styles';
 
-export interface UnusedPanelProps {
+interface UnusedPanelProps {
   unusedStyles: Array<{ name: string; file: string }>;
   unusedExports: Array<{ name: string; type: string; file: string; canBeInternal?: boolean }>;
   projectRoot?: string;
