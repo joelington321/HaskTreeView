@@ -30,6 +30,7 @@ library
       JsonGenerator
       Lib
       StyleUsageAnalyzer
+      UnusedExportsAnalyzer
   other-modules:
       Paths_HaskTreeView
   hs-source-dirs:

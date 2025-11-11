@@ -48,14 +48,14 @@ instance ToJSON FileNode
 -- | Informação sobre estilo não utilizado
 data UnusedStyle = UnusedStyle
     { unusedStyleName :: Text
-    , unusedStyleFile :: Text
+    , unusedStyleFileId :: Text  -- Mudado para usar ID
     , unusedImportType :: Text
     } deriving (Show, Eq, Generic)
 
 instance ToJSON UnusedStyle where
     toJSON us = object
         [ "name" .= unusedStyleName us
-        , "file" .= unusedStyleFile us
+        , "fileId" .= unusedStyleFileId us
         , "importType" .= unusedImportType us
         ]
 
@@ -63,7 +63,7 @@ instance ToJSON UnusedStyle where
 data UnusedExport = UnusedExport
     { unusedExportName :: Text
     , unusedExportType :: Text
-    , unusedExportFile :: Text
+    , unusedExportFileId :: Text  -- Mudado para usar ID
     , canBeInternal :: Bool  -- Novo campo: pode ser convertido para uso interno
     } deriving (Show, Eq, Generic)
 
@@ -71,7 +71,7 @@ instance ToJSON UnusedExport where
     toJSON ue = object
         [ "name" .= unusedExportName ue
         , "type" .= unusedExportType ue
-        , "file" .= unusedExportFile ue
+        , "fileId" .= unusedExportFileId ue
         , "canBeInternal" .= canBeInternal ue
         ]
 
@@ -185,10 +185,10 @@ analyzeDependencies rootDir files = do
     
     -- Analisar estilos não utilizados
     let styleFiles = filter isStyleFile absFiles
-    unusedStylesList <- analyzeUnusedStyles styleFiles
+    unusedStylesList <- analyzeUnusedStyles styleFiles fileToId
     
     -- Analisar exports não utilizados (todos os arquivos)
-    unusedExportsList <- analyzeUnusedExports absRootDir absFiles
+    unusedExportsList <- analyzeUnusedExports absRootDir absFiles fileToId
     
     return $ AnalysisResult
         { projectName = T.pack $ takeFileName absRootDir
@@ -204,34 +204,38 @@ isStyleFile :: FilePath -> Bool
 isStyleFile path = ".styles.ts" `isSuffixOf` path || ".styles.tsx" `isSuffixOf` path
 
 -- | Analisa estilos não utilizados
-analyzeUnusedStyles :: [FilePath] -> IO [UnusedStyle]
-analyzeUnusedStyles styleFiles = do
+analyzeUnusedStyles :: [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
+analyzeUnusedStyles styleFiles fileToId = do
     allUnused <- Style.findUnusedStyles styleFiles
-    return $ concatMap convertReports allUnused
+    return $ concatMap (convertReports fileToId) allUnused
   where
-    convertReports :: (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]
-    convertReports (filePath, reports) =
-        [ UnusedStyle
-            { unusedStyleName = Style.styleName report
-            , unusedStyleFile = T.pack filePath
-            , unusedImportType = Style.importType report
-            }
-        | report <- reports
-        ]
+    convertReports :: Map.Map FilePath Text -> (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]
+    convertReports idMap (filePath, reports) =
+        let fileId = Map.findWithDefault "?" filePath idMap
+        in [ UnusedStyle
+                { unusedStyleName = Style.styleName report
+                , unusedStyleFileId = fileId
+                , unusedImportType = Style.importType report
+                }
+           | report <- reports
+           ]
 
 -- | Analisa exports não utilizados
-analyzeUnusedExports :: FilePath -> [FilePath] -> IO [UnusedExport]
-analyzeUnusedExports rootDir allFiles = do
+analyzeUnusedExports :: FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedExport]
+analyzeUnusedExports rootDir allFiles fileToId = do
     reports <- Exports.analyzeUnusedExports rootDir allFiles
-    return $ map convertReport reports
+    return $ map (convertReport fileToId) reports
   where
-    convertReport :: Exports.UnusedExportReport -> UnusedExport
-    convertReport report = UnusedExport
-        { unusedExportName = Exports.unusedExportName report
-        , unusedExportType = T.pack $ show (Exports.unusedExportType report)
-        , unusedExportFile = T.pack $ Exports.unusedExportFile report
-        , canBeInternal = determineIfCanBeInternal report
-        }
+    convertReport :: Map.Map FilePath Text -> Exports.UnusedExportReport -> UnusedExport
+    convertReport idMap report = 
+        let filePath = Exports.unusedExportFile report
+            fileId = Map.findWithDefault "?" filePath idMap
+        in UnusedExport
+            { unusedExportName = Exports.unusedExportName report
+            , unusedExportType = T.pack $ show (Exports.unusedExportType report)
+            , unusedExportFileId = fileId
+            , canBeInternal = determineIfCanBeInternal report
+            }
     
     -- Determina se um export pode ser convertido para uso interno
     -- Critério: usado apenas no próprio arquivo e não usado externamente

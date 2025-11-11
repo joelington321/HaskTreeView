@@ -1,5 +1,5 @@
 {
-    "analyzedAt": "2025-11-08T02:57:47Z",
+    "analyzedAt": "2025-11-11T03:34:39Z",
     "dependencies": [
         {
             "fileId": "1",
@@ -24,17 +24,9 @@
                 "3"
             ],
             "imports": [
-                "19",
-                "29",
-                "43",
-                "49",
-                "46",
-                "42",
-                "36",
-                "39",
-                "20",
+                "21",
                 "5",
-                "31"
+                "22"
             ]
         },
         {
@@ -50,6 +42,7 @@
             "imports": [
                 "8",
                 "9",
+                "15",
                 "7"
             ]
         },
@@ -57,9 +50,9 @@
             "fileId": "7",
             "importedBy": [
                 "6",
-                "24",
-                "34",
-                "40"
+                "27",
+                "41",
+                "46"
             ],
             "imports": []
         },
@@ -67,314 +60,319 @@
             "fileId": "8",
             "importedBy": [
                 "6",
-                "27"
+                "30"
             ],
             "imports": [
-                "19"
+                "20"
             ]
         },
         {
             "fileId": "9",
             "importedBy": [
                 "6",
-                "27"
+                "30"
             ],
             "imports": [
-                "19"
+                "20"
             ]
         },
         {
             "fileId": "10",
             "importedBy": [
-                "14"
+                "27",
+                "28",
+                "29"
             ],
-            "imports": [
-                "19"
-            ]
+            "imports": []
         },
         {
             "fileId": "11",
             "importedBy": [
-                "14"
+                "15"
             ],
             "imports": [
-                "19",
-                "12"
+                "20"
             ]
         },
         {
             "fileId": "12",
             "importedBy": [
-                "11",
-                "13",
-                "14",
-                "15",
-                "16",
-                "17",
-                "18"
+                "15"
             ],
             "imports": [
-                "19"
+                "20",
+                "13"
             ]
         },
         {
             "fileId": "13",
             "importedBy": [
-                "14"
+                "12",
+                "14",
+                "15",
+                "16",
+                "17",
+                "18",
+                "19"
             ],
             "imports": [
-                "19",
-                "12"
+                "20"
             ]
         },
         {
             "fileId": "14",
             "importedBy": [
-                "27"
+                "15"
             ],
             "imports": [
-                "10",
-                "15",
-                "18",
-                "16",
-                "11",
-                "13",
-                "12",
-                "17"
+                "20",
+                "13"
             ]
         },
         {
             "fileId": "15",
             "importedBy": [
-                "14"
+                "6",
+                "30"
             ],
             "imports": [
+                "11",
+                "16",
                 "19",
-                "12",
                 "17",
-                "31"
+                "12",
+                "14",
+                "13",
+                "18"
             ]
         },
         {
             "fileId": "16",
             "importedBy": [
-                "14"
+                "15"
             ],
             "imports": [
-                "19",
-                "12"
+                "20",
+                "13",
+                "18",
+                "34"
             ]
         },
         {
             "fileId": "17",
             "importedBy": [
-                "14",
                 "15"
             ],
             "imports": [
-                "19",
-                "12"
+                "20",
+                "13"
             ]
         },
         {
             "fileId": "18",
             "importedBy": [
-                "14"
+                "15",
+                "16"
             ],
             "imports": [
-                "19",
-                "12"
+                "20",
+                "13"
             ]
         },
         {
             "fileId": "19",
             "importedBy": [
-                "4",
-                "8",
-                "9",
-                "10",
-                "11",
-                "12",
-                "13",
-                "15",
-                "16",
-                "17",
-                "18",
-                "22",
-                "24",
-                "25",
-                "26",
-                "27",
-                "28",
-                "33",
-                "34",
-                "40",
-                "47",
-                "50"
+                "15"
             ],
-            "imports": []
+            "imports": [
+                "20",
+                "13"
+            ]
         },
         {
             "fileId": "20",
             "importedBy": [
-                "4"
+                "8",
+                "9",
+                "11",
+                "12",
+                "13",
+                "14",
+                "16",
+                "17",
+                "18",
+                "19",
+                "23",
+                "26",
+                "27",
+                "28",
+                "29",
+                "30",
+                "31",
+                "36",
+                "38",
+                "41",
+                "43",
+                "46"
             ],
             "imports": []
         },
         {
             "fileId": "21",
             "importedBy": [
-                "47"
+                "4"
             ],
-            "imports": [
-                "22",
-                "22",
-                "24",
-                "25",
-                "26"
-            ]
+            "imports": []
         },
         {
             "fileId": "22",
             "importedBy": [
-                "21",
-                "21"
+                "4"
             ],
             "imports": [
-                "19",
-                "24",
-                "25",
-                "26"
+                "23"
             ]
         },
         {
             "fileId": "23",
             "importedBy": [
-                "24",
-                "25",
-                "26"
+                "22"
             ],
-            "imports": []
+            "imports": [
+                "20",
+                "32",
+                "45",
+                "40",
+                "37",
+                "34",
+                "24"
+            ]
         },
         {
             "fileId": "24",
             "importedBy": [
-                "21",
-                "22"
+                "23"
             ],
-            "imports": [
-                "19",
-                "31",
-                "23",
-                "7"
-            ]
+            "imports": []
         },
         {
             "fileId": "25",
             "importedBy": [
-                "21",
-                "22"
+                "38"
             ],
             "imports": [
-                "19",
-                "31",
-                "23"
+                "26",
+                "26",
+                "27",
+                "28",
+                "29"
             ]
         },
         {
             "fileId": "26",
             "importedBy": [
-                "21",
-                "22"
+                "25",
+                "25"
             ],
             "imports": [
-                "19",
-                "31",
-                "23"
+                "20",
+                "27",
+                "28",
+                "29"
             ]
         },
         {
             "fileId": "27",
             "importedBy": [
-                "29"
+                "25",
+                "26"
             ],
             "imports": [
-                "19",
-                "8",
-                "9",
-                "31",
-                "14"
+                "20",
+                "34",
+                "10",
+                "7"
             ]
         },
         {
             "fileId": "28",
             "importedBy": [
-                "29"
+                "25",
+                "26"
             ],
             "imports": [
-                "19",
-                "31"
+                "20",
+                "34",
+                "10"
             ]
         },
         {
             "fileId": "29",
             "importedBy": [
-                "4"
+                "25",
+                "26"
             ],
             "imports": [
-                "27",
-                "28"
+                "20",
+                "34",
+                "10"
             ]
         },
         {
             "fileId": "30",
             "importedBy": [
-                "31"
+                "32"
             ],
-            "imports": []
+            "imports": [
+                "20",
+                "8",
+                "9",
+                "34",
+                "15"
+            ]
         },
         {
             "fileId": "31",
             "importedBy": [
-                "4",
-                "15",
-                "24",
-                "25",
-                "26",
-                "27",
-                "28"
+                "32"
             ],
             "imports": [
-                "33",
-                "32",
-                "30"
+                "20",
+                "34"
             ]
         },
         {
             "fileId": "32",
             "importedBy": [
-                "31"
+                "23"
             ],
-            "imports": []
+            "imports": [
+                "30",
+                "31"
+            ]
         },
         {
             "fileId": "33",
             "importedBy": [
-                "31"
+                "34"
             ],
-            "imports": [
-                "19"
-            ]
+            "imports": []
         },
         {
             "fileId": "34",
             "importedBy": [
-                "36"
+                "16",
+                "23",
+                "27",
+                "28",
+                "29",
+                "30",
+                "31"
             ],
             "imports": [
-                "19",
-                "7",
-                "35"
+                "36",
+                "35",
+                "33"
             ]
         },
         {
@@ -387,16 +385,16 @@
         {
             "fileId": "36",
             "importedBy": [
-                "4"
+                "34"
             ],
             "imports": [
-                "34"
+                "20"
             ]
         },
         {
             "fileId": "37",
             "importedBy": [
-                "39"
+                "23"
             ],
             "imports": [
                 "38"
@@ -407,25 +405,26 @@
             "importedBy": [
                 "37"
             ],
-            "imports": []
+            "imports": [
+                "20",
+                "25",
+                "39"
+            ]
         },
         {
             "fileId": "39",
             "importedBy": [
-                "4"
+                "38"
             ],
-            "imports": [
-                "37"
-            ]
+            "imports": []
         },
         {
             "fileId": "40",
             "importedBy": [
-                "42"
+                "23"
             ],
             "imports": [
-                "19",
-                "7",
+                "43",
                 "41"
             ]
         },
@@ -434,24 +433,27 @@
             "importedBy": [
                 "40"
             ],
-            "imports": []
+            "imports": [
+                "20",
+                "7",
+                "42"
+            ]
         },
         {
             "fileId": "42",
             "importedBy": [
-                "4"
+                "41"
             ],
-            "imports": [
-                "40"
-            ]
+            "imports": []
         },
         {
             "fileId": "43",
             "importedBy": [
-                "4"
+                "40"
             ],
             "imports": [
-                "44"
+                "44",
+                "20"
             ]
         },
         {
@@ -459,23 +461,27 @@
             "importedBy": [
                 "43"
             ],
-            "imports": [
-                "45"
-            ]
+            "imports": []
         },
         {
             "fileId": "45",
             "importedBy": [
-                "44"
+                "23"
             ],
-            "imports": []
+            "imports": [
+                "50",
+                "48",
+                "46"
+            ]
         },
         {
             "fileId": "46",
             "importedBy": [
-                "4"
+                "45"
             ],
             "imports": [
+                "20",
+                "7",
                 "47"
             ]
         },
@@ -484,36 +490,31 @@
             "importedBy": [
                 "46"
             ],
-            "imports": [
-                "19",
-                "21",
-                "48"
-            ]
+            "imports": []
         },
         {
             "fileId": "48",
             "importedBy": [
-                "47"
+                "45"
             ],
-            "imports": []
+            "imports": [
+                "49"
+            ]
         },
         {
             "fileId": "49",
             "importedBy": [
-                "4"
+                "48"
             ],
-            "imports": [
-                "50"
-            ]
+            "imports": []
         },
         {
             "fileId": "50",
             "importedBy": [
-                "49"
+                "45"
             ],
             "imports": [
-                "51",
-                "19"
+                "51"
             ]
         },
         {
@@ -527,56 +528,93 @@
     "fileRegistry": {
         "0": "C:\\Dev\\HaskTreeView\\viewer-app",
         "1": "vite.config.ts",
-        "10": "src\\utils\\layout\\types.ts",
-        "11": "src\\utils\\layout\\radial.ts",
-        "12": "src\\utils\\layout\\nodeHelpers.ts",
-        "13": "src\\utils\\layout\\layered.ts",
-        "14": "src\\utils\\layout\\index.ts",
-        "15": "src\\utils\\layout\\hierarchical.ts",
-        "16": "src\\utils\\layout\\forceDirected.ts",
-        "17": "src\\utils\\layout\\depthCalculation.ts",
-        "18": "src\\utils\\layout\\circular.ts",
-        "19": "src\\types\\index.ts",
+        "10": "src\\utils\\canvasUtils.ts",
+        "11": "src\\utils\\layout\\types.ts",
+        "12": "src\\utils\\layout\\radial.ts",
+        "13": "src\\utils\\layout\\nodeHelpers.ts",
+        "14": "src\\utils\\layout\\layered.ts",
+        "15": "src\\utils\\layout\\index.ts",
+        "16": "src\\utils\\layout\\hierarchical.ts",
+        "17": "src\\utils\\layout\\forceDirected.ts",
+        "18": "src\\utils\\layout\\depthCalculation.ts",
+        "19": "src\\utils\\layout\\circular.ts",
         "2": ".eslintrc.cjs",
-        "20": "src\\styles\\GlobalStyles.ts",
-        "21": "src\\rendering\\index.ts",
-        "22": "src\\rendering\\CanvasRenderer.ts",
-        "23": "src\\rendering\\utils\\canvasUtils.ts",
-        "24": "src\\rendering\\drawers\\NodeDrawer.ts",
-        "25": "src\\rendering\\drawers\\ConnectionDrawer.ts",
-        "26": "src\\rendering\\drawers\\ComponentDrawer.ts",
-        "27": "src\\hooks\\useGraphData.ts",
-        "28": "src\\hooks\\useCanvasInteraction.ts",
-        "29": "src\\hooks\\index.ts",
+        "20": "src\\types\\index.ts",
+        "21": "src\\styles\\GlobalStyles.ts",
+        "22": "src\\screens\\index.ts",
+        "23": "src\\screens\\DashboardScreen.tsx",
+        "24": "src\\screens\\DashboardScreen.styles.ts",
+        "25": "src\\rendering\\index.ts",
+        "26": "src\\rendering\\CanvasRenderer.ts",
+        "27": "src\\rendering\\drawers\\NodeDrawer.ts",
+        "28": "src\\rendering\\drawers\\ConnectionDrawer.ts",
+        "29": "src\\rendering\\drawers\\ComponentDrawer.ts",
         "3": "src\\main.tsx",
-        "30": "src\\constants\\ui.ts",
-        "31": "src\\constants\\index.ts",
-        "32": "src\\constants\\colors.ts",
-        "33": "src\\constants\\canvas.ts",
-        "34": "src\\components\\Stats\\Stats.tsx",
-        "35": "src\\components\\Stats\\Stats.styles.ts",
-        "36": "src\\components\\Stats\\index.tsx",
-        "37": "src\\components\\Legend\\Legend.tsx",
-        "38": "src\\components\\Legend\\Legend.styles.ts",
-        "39": "src\\components\\Legend\\index.tsx",
+        "30": "src\\hooks\\useGraphData.ts",
+        "31": "src\\hooks\\useCanvasInteraction.ts",
+        "32": "src\\hooks\\index.ts",
+        "33": "src\\constants\\ui.ts",
+        "34": "src\\constants\\index.ts",
+        "35": "src\\constants\\colors.ts",
+        "36": "src\\constants\\canvas.ts",
+        "37": "src\\components\\organisms\\index.ts",
+        "38": "src\\components\\organisms\\GraphCanvas\\GraphCanvas.tsx",
+        "39": "src\\components\\organisms\\GraphCanvas\\GraphCanvas.styles.ts",
         "4": "src\\App.tsx",
-        "40": "src\\components\\InfoPanel\\InfoPanel.tsx",
-        "41": "src\\components\\InfoPanel\\InfoPanel.styles.ts",
-        "42": "src\\components\\InfoPanel\\index.tsx",
-        "43": "src\\components\\Header\\index.tsx",
-        "44": "src\\components\\Header\\Header.tsx",
-        "45": "src\\components\\Header\\Header.styles.ts",
-        "46": "src\\components\\GraphCanvas\\index.tsx",
-        "47": "src\\components\\GraphCanvas\\GraphCanvas.tsx",
-        "48": "src\\components\\GraphCanvas\\GraphCanvas.styles.ts",
-        "49": "src\\components\\Controls\\index.tsx",
+        "40": "src\\components\\molecules\\index.ts",
+        "41": "src\\components\\molecules\\InfoPanel\\InfoPanel.tsx",
+        "42": "src\\components\\molecules\\InfoPanel\\InfoPanel.styles.ts",
+        "43": "src\\components\\molecules\\Controls\\Controls.tsx",
+        "44": "src\\components\\molecules\\Controls\\Controls.styles.ts",
+        "45": "src\\components\\atoms\\index.ts",
+        "46": "src\\components\\atoms\\Stats\\Stats.tsx",
+        "47": "src\\components\\atoms\\Stats\\Stats.styles.ts",
+        "48": "src\\components\\atoms\\Legend\\Legend.tsx",
+        "49": "src\\components\\atoms\\Legend\\Legend.styles.ts",
         "5": "src\\App.styles.ts",
-        "50": "src\\components\\Controls\\Controls.tsx",
-        "51": "src\\components\\Controls\\Controls.styles.ts",
+        "50": "src\\components\\atoms\\Header\\Header.tsx",
+        "51": "src\\components\\atoms\\Header\\Header.styles.ts",
         "6": "src\\utils\\index.ts",
         "7": "src\\utils\\helpers.ts",
         "8": "src\\utils\\cycleDetection.ts",
         "9": "src\\utils\\componentDetection.ts"
     },
-    "projectName": "viewer-app"
+    "projectName": "viewer-app",
+    "unusedExports": [
+        {
+            "canBeInternal": true,
+            "fileId": "20",
+            "name": "FileDependency",
+            "type": "InterfaceExport"
+        },
+        {
+            "canBeInternal": false,
+            "fileId": "20",
+            "name": "LayoutConfig",
+            "type": "InterfaceExport"
+        },
+        {
+            "canBeInternal": true,
+            "fileId": "27",
+            "name": "NodeDrawOptions",
+            "type": "InterfaceExport"
+        }
+    ],
+    "unusedStyles": [
+        {
+            "fileId": "49",
+            "importType": "none",
+            "name": "LegendTest"
+        },
+        {
+            "fileId": "51",
+            "importType": "none",
+            "name": "Logo"
+        },
+        {
+            "fileId": "51",
+            "importType": "none",
+            "name": "NavBar"
+        }
+    ]
 }
