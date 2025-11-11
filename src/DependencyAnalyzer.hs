@@ -5,6 +5,7 @@ module DependencyAnalyzer
     ( AnalysisResult(..)
     , FileNode(..)
     , UnusedStyle(..)
+    , UnusedExport(..)
     , analyzeDependencies
     , isExternalImport  -- Exportando para testes
     ) where
@@ -21,6 +22,7 @@ import qualified Data.Aeson as Aeson
 
 import ImportParser (parseImports, ImportStatement(..), importSource)
 import qualified StyleUsageAnalyzer as Style
+import qualified UnusedExportsAnalyzer as Exports
 
 -- | Pastas que devem ser ignoradas (sempre externas)
 ignoredPaths :: [String]
@@ -57,6 +59,22 @@ instance ToJSON UnusedStyle where
         , "importType" .= unusedImportType us
         ]
 
+-- | Informação sobre export não utilizado
+data UnusedExport = UnusedExport
+    { unusedExportName :: Text
+    , unusedExportType :: Text
+    , unusedExportFile :: Text
+    , canBeInternal :: Bool  -- Novo campo: pode ser convertido para uso interno
+    } deriving (Show, Eq, Generic)
+
+instance ToJSON UnusedExport where
+    toJSON ue = object
+        [ "name" .= unusedExportName ue
+        , "type" .= unusedExportType ue
+        , "file" .= unusedExportFile ue
+        , "canBeInternal" .= canBeInternal ue
+        ]
+
 -- | Resultado completo da análise
 data AnalysisResult = AnalysisResult
     { projectName :: Text
@@ -64,6 +82,7 @@ data AnalysisResult = AnalysisResult
     , fileRegistry :: Map.Map Text Text
     , dependencies :: [FileNode]
     , unusedStyles :: [UnusedStyle]
+    , unusedExports :: [UnusedExport]
     } deriving (Show, Generic)
 
 instance ToJSON AnalysisResult where
@@ -73,6 +92,7 @@ instance ToJSON AnalysisResult where
         , "fileRegistry" .= fileRegistry ar
         , "dependencies" .= dependencies ar
         , "unusedStyles" .= unusedStyles ar
+        , "unusedExports" .= unusedExports ar
         ]
 
 -- | Verifica se um path contém diretórios ignorados
@@ -167,12 +187,16 @@ analyzeDependencies rootDir files = do
     let styleFiles = filter isStyleFile absFiles
     unusedStylesList <- analyzeUnusedStyles styleFiles
     
+    -- Analisar exports não utilizados (todos os arquivos)
+    unusedExportsList <- analyzeUnusedExports absRootDir absFiles
+    
     return $ AnalysisResult
         { projectName = T.pack $ takeFileName absRootDir
         , analyzedAt = "2025-11-11T00:00:00Z"
         , fileRegistry = fileRegistry
         , dependencies = finalNodes
         , unusedStyles = unusedStylesList
+        , unusedExports = unusedExportsList
         }
 
 -- | Verifica se um arquivo é um arquivo de estilos
@@ -194,6 +218,26 @@ analyzeUnusedStyles styleFiles = do
             }
         | report <- reports
         ]
+
+-- | Analisa exports não utilizados
+analyzeUnusedExports :: FilePath -> [FilePath] -> IO [UnusedExport]
+analyzeUnusedExports rootDir allFiles = do
+    reports <- Exports.analyzeUnusedExports rootDir allFiles
+    return $ map convertReport reports
+  where
+    convertReport :: Exports.UnusedExportReport -> UnusedExport
+    convertReport report = UnusedExport
+        { unusedExportName = Exports.unusedExportName report
+        , unusedExportType = T.pack $ show (Exports.unusedExportType report)
+        , unusedExportFile = T.pack $ Exports.unusedExportFile report
+        , canBeInternal = determineIfCanBeInternal report
+        }
+    
+    -- Determina se um export pode ser convertido para uso interno
+    -- Critério: usado apenas no próprio arquivo e não usado externamente
+    determineIfCanBeInternal :: Exports.UnusedExportReport -> Bool
+    determineIfCanBeInternal report =
+        Exports.usedInSameFile report && not (Exports.isUsedAnywhere report)
 
 -- | Cria o registry de arquivos
 createRegistry :: FilePath -> [FilePath] -> Map.Map Text Text
