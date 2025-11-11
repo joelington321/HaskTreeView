@@ -23,6 +23,7 @@ import qualified Data.Aeson as Aeson
 import ImportParser (parseImports, ImportStatement(..), importSource)
 import qualified StyleUsageAnalyzer as Style
 import qualified UnusedExportsAnalyzer as Exports
+import FileCache (FileCache, loadFileCache)
 
 -- | Pastas que devem ser ignoradas (sempre externas)
 ignoredPaths :: [String]
@@ -173,6 +174,10 @@ analyzeDependencies rootDir files = do
     absRootDir <- canonicalizePath rootDir
     absFiles <- mapM canonicalizePath files
     
+    -- Carregar todos os arquivos em cache UMA VEZ
+    putStrLn "   - Carregando arquivos em cache..."
+    cache <- loadFileCache absFiles
+    
     -- Criar registry (0 = rootPath, 1+ = arquivos, -1- = externos)
     putStrLn "   - Criando registro de arquivos..."
     let fileRegistry = createRegistry absRootDir absFiles
@@ -180,7 +185,7 @@ analyzeDependencies rootDir files = do
     
     -- Analisar imports de cada arquivo
     putStrLn "   - Parseando imports..."
-    fileNodes <- mapM (analyzeFile absRootDir fileToId fileRegistry) absFiles
+    fileNodes <- mapM (analyzeFile cache absRootDir fileToId fileRegistry) absFiles
     
     -- Calcular importedBy
     putStrLn "   - Calculando dependencias reversas..."
@@ -190,11 +195,11 @@ analyzeDependencies rootDir files = do
     let styleFiles = filter isStyleFile absFiles
     let styleCount = length styleFiles
     putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos..."
-    unusedStylesList <- analyzeUnusedStyles absRootDir styleFiles fileToId
+    unusedStylesList <- analyzeUnusedStyles cache absRootDir styleFiles fileToId
     
     -- Analisar exports não utilizados (todos os arquivos)
     putStrLn "   - Verificando uso de exports..."
-    unusedExportsList <- analyzeUnusedExports absRootDir absFiles fileToId
+    unusedExportsList <- analyzeUnusedExports cache absRootDir absFiles fileToId
     
     return $ AnalysisResult
         { projectName = T.pack $ takeFileName absRootDir
@@ -210,9 +215,9 @@ isStyleFile :: FilePath -> Bool
 isStyleFile path = ".styles.ts" `isSuffixOf` path || ".styles.tsx" `isSuffixOf` path
 
 -- | Analisa estilos não utilizados
-analyzeUnusedStyles :: FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
-analyzeUnusedStyles rootDir styleFiles fileToId = do
-    allUnused <- Style.findUnusedStyles rootDir styleFiles
+analyzeUnusedStyles :: FileCache -> FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
+analyzeUnusedStyles cache rootDir styleFiles fileToId = do
+    allUnused <- Style.findUnusedStyles cache rootDir styleFiles
     return $ concatMap (convertReports fileToId) allUnused
   where
     convertReports :: Map.Map FilePath Text -> (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]
@@ -227,9 +232,9 @@ analyzeUnusedStyles rootDir styleFiles fileToId = do
            ]
 
 -- | Analisa exports não utilizados
-analyzeUnusedExports :: FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedExport]
-analyzeUnusedExports rootDir allFiles fileToId = do
-    reports <- Exports.analyzeUnusedExports rootDir allFiles
+analyzeUnusedExports :: FileCache -> FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedExport]
+analyzeUnusedExports cache rootDir allFiles fileToId = do
+    reports <- Exports.analyzeUnusedExports cache rootDir allFiles
     return $ map (convertReport fileToId) reports
   where
     convertReport :: Map.Map FilePath Text -> Exports.UnusedExportReport -> UnusedExport
@@ -263,8 +268,8 @@ createFileToIdMap files =
     Map.fromList $ zip files (map (T.pack . show) [1..])
 
 -- | Analisa um arquivo
-analyzeFile :: FilePath -> Map.Map FilePath Text -> Map.Map Text Text -> FilePath -> IO FileNode
-analyzeFile rootDir fileToId registry filePath = do
+analyzeFile :: FileCache -> FilePath -> Map.Map FilePath Text -> Map.Map Text Text -> FilePath -> IO FileNode
+analyzeFile cache rootDir fileToId registry filePath = do
     importStmts <- parseImports filePath
     
     -- Resolver imports

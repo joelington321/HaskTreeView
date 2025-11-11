@@ -25,6 +25,7 @@ library
   exposed-modules:
       Config
       DependencyAnalyzer
+      FileCache
       FileFilter
       ImportParser
       JsonGenerator
@@ -38,6 +39,7 @@ library
   build-depends:
       aeson
     , aeson-pretty
+    , async
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -58,6 +60,7 @@ executable HaskTreeView-exe
       HaskTreeView
     , aeson
     , aeson-pretty
+    , async
     , base >=4.7 && <5
     , bytestring
     , containers
@@ -79,6 +82,7 @@ test-suite HaskTreeView-test
       HaskTreeView
     , aeson
     , aeson-pretty
+    , async
     , base >=4.7 && <5
     , bytestring
     , containers

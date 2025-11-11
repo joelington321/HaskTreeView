@@ -16,6 +16,7 @@ import qualified Data.Map.Strict as Map
 import Control.Monad (filterM, forM)
 import System.Directory (doesFileExist)
 import FileFilter (getFilteredFiles)
+import FileCache (FileCache, readFromCache, getLines)
 
 -- | Representa um export de styled-component
 data StyleExport = StyleExport
@@ -35,24 +36,23 @@ data StyleUsageReport = StyleUsageReport
     } deriving (Show, Eq)
 
 -- | Analisa o uso de styled-components em um arquivo de estilos
-analyzeStyleUsage :: FilePath -> FilePath -> IO [StyleUsageReport]
-analyzeStyleUsage rootDir styleFilePath = do
+analyzeStyleUsage :: FileCache -> FilePath -> FilePath -> IO [StyleUsageReport]
+analyzeStyleUsage cache rootDir styleFilePath = do
     -- Extrair todos os exports do arquivo de estilos
-    exports <- extractStyleExports styleFilePath
+    let exports = extractStyleExports cache styleFilePath
     
     -- Encontrar arquivos que importam este arquivo de estilos em todo o projeto
-    importers <- findImportersInProject rootDir styleFilePath
+    importers <- findImportersInProject cache rootDir styleFilePath
     
     -- Para cada export, verificar se é usado
-    mapM (checkUsage importers) exports
+    mapM (checkUsage cache importers) exports
 
 -- | Extrai todos os exports de styled-components de um arquivo
-extractStyleExports :: FilePath -> IO [StyleExport]
-extractStyleExports filePath = do
-    content <- TIO.readFile filePath
-    let linesWithNumbers = zip [1..] (T.lines content)
+extractStyleExports :: FileCache -> FilePath -> [StyleExport]
+extractStyleExports cache filePath =
+    let linesWithNumbers = zip [1..] (getLines cache filePath)
         exports = filter isStyledExport linesWithNumbers
-    return $ map (createExport filePath) exports
+    in map (createExport filePath) exports
   where
     -- Verifica se uma linha é um export de styled-component
     isStyledExport :: (Int, Text) -> Bool
@@ -77,27 +77,25 @@ extractStyleExports filePath = do
         in T.strip name
 
 -- | Encontra arquivos que importam o arquivo de estilos em todo o projeto
-findImportersInProject :: FilePath -> FilePath -> IO [FilePath]
-findImportersInProject rootDir styleFilePath = do
+findImportersInProject :: FileCache -> FilePath -> FilePath -> IO [FilePath]
+findImportersInProject cache rootDir styleFilePath = do
     -- Buscar todos os arquivos .tsx e .ts no projeto
     allFiles <- getFilteredFiles rootDir
     let jsFiles = filter (\f -> takeExtension f `elem` [".tsx", ".ts", ".js", ".jsx"]) allFiles
     
     -- Filtrar apenas arquivos que realmente importam o estilo
-    actualImporters <- filterM (importsStyleFile rootDir styleFilePath) jsFiles
+    let actualImporters = filter (importsStyleFile cache rootDir styleFilePath) jsFiles
     
     return actualImporters
 
 -- | Verifica se um arquivo importa o arquivo de estilos
-importsStyleFile :: FilePath -> FilePath -> FilePath -> IO Bool
-importsStyleFile rootDir styleFile targetFile = do
-    content <- TIO.readFile targetFile
-    let styleRelativePath = makeRelative rootDir styleFile
+importsStyleFile :: FileCache -> FilePath -> FilePath -> FilePath -> Bool
+importsStyleFile cache rootDir styleFile targetFile =
+    let content = readFromCache cache targetFile
+        styleRelativePath = makeRelative rootDir styleFile
         -- Gerar possíveis caminhos de import
         possibleImportPaths = generateImportPaths rootDir targetFile styleFile
-    
-    -- Verificar se algum dos caminhos possíveis está no conteúdo
-    return $ any (\path -> isImportPresent content path) possibleImportPaths
+    in any (\path -> isImportPresent content path) possibleImportPaths
 
 -- | Gera possíveis caminhos de import baseado nos arquivos
 generateImportPaths :: FilePath -> FilePath -> FilePath -> [Text]
@@ -150,13 +148,13 @@ isImportPresent content importPath =
        && (importPath `T.isInfixOf` cleanContent)
 
 -- | Verifica se um export de estilo é usado
-checkUsage :: [FilePath] -> StyleExport -> IO StyleUsageReport
-checkUsage importers export = do
-    usages <- mapM (checkFileUsage export) importers
-    let usedFiles = [f | (f, True) <- usages]
+checkUsage :: FileCache -> [FilePath] -> StyleExport -> IO StyleUsageReport
+checkUsage cache importers export = do
+    let usages = map (checkFileUsage cache export) importers
+        usedFiles = [f | (f, True) <- usages]
     importTypeDetected <- if null usedFiles 
                           then return "none" 
-                          else detectImportType (head usedFiles) export
+                          else return $ detectImportType cache (head usedFiles) export
     
     return $ StyleUsageReport
         { styleName = exportName export
@@ -167,33 +165,31 @@ checkUsage importers export = do
         }
 
 -- | Verifica se um estilo é usado em um arquivo específico
-checkFileUsage :: StyleExport -> FilePath -> IO (FilePath, Bool)
-checkFileUsage export filePath = do
-    content <- TIO.readFile filePath
-    let name = exportName export
+checkFileUsage :: FileCache -> StyleExport -> FilePath -> (FilePath, Bool)
+checkFileUsage cache export filePath =
+    let content = readFromCache cache filePath
+        name = exportName export
         
-    -- Verificar import tipo namespace (import * as S)
-    namespaceUsed <- checkNamespaceUsage content name filePath
-    
-    -- Verificar import direto (import { Button })
-    let directUsed = checkDirectUsage content name
-    
-    return (filePath, namespaceUsed || directUsed)
+        -- Verificar import tipo namespace (import * as S)
+        namespaceUsed = checkNamespaceUsage content name filePath
+        
+        -- Verificar import direto (import { Button })
+        directUsed = checkDirectUsage content name
+    in (filePath, namespaceUsed || directUsed)
 
 -- | Verifica uso através de namespace import (S.Button)
-checkNamespaceUsage :: Text -> Text -> FilePath -> IO Bool
-checkNamespaceUsage content componentName filePath = do
+checkNamespaceUsage :: Text -> Text -> FilePath -> Bool
+checkNamespaceUsage content componentName filePath =
     let lines' = T.lines content
-    -- Encontrar linhas de import namespace
-    let namespaceImports = filter isNamespaceImport lines'
-    
-    case namespaceImports of
-        [] -> return False
-        imports -> do
+        -- Encontrar linhas de import namespace
+        namespaceImports = filter isNamespaceImport lines'
+    in case namespaceImports of
+        [] -> False
+        imports -> 
             let namespaces = map extractNamespace imports
-            -- Verificar se algum uso como "namespace.Component" existe no código
-            let hasUsage = any (\ns -> T.isInfixOf (ns <> "." <> componentName) content) namespaces
-            return hasUsage
+                -- Verificar se algum uso como "namespace.Component" existe no código
+                hasUsage = any (\ns -> T.isInfixOf (ns <> "." <> componentName) content) namespaces
+            in hasUsage
   where
     isNamespaceImport :: Text -> Bool
     isNamespaceImport line =
@@ -216,32 +212,31 @@ checkDirectUsage content componentName =
     in openTag `T.isInfixOf` content || closeTag `T.isInfixOf` content
 
 -- | Detecta o tipo de import usado
-detectImportType :: FilePath -> StyleExport -> IO Text
-detectImportType filePath export = do
-    content <- TIO.readFile filePath
-    let lines' = T.lines content
+detectImportType :: FileCache -> FilePath -> StyleExport -> Text
+detectImportType cache filePath export =
+    let content = readFromCache cache filePath
+        lines' = T.lines content
         name = exportName export
-    
-    -- Verificar se há import namespace
-    let hasNamespace = any (\line -> "import * as " `T.isPrefixOf` T.strip line) lines'
-    
-    -- Verificar se há import direto com o nome
-    let hasDirect = any (\line -> 
-            let trimmed = T.strip line
-            in ("import {" `T.isPrefixOf` trimmed || "import { " `T.isPrefixOf` trimmed)
-               && name `T.isInfixOf` trimmed) lines'
-    
-    return $ if hasNamespace then "namespace"
-             else if hasDirect then "direct"
-             else "unknown"
+        
+        -- Verificar se há import namespace
+        hasNamespace = any (\line -> "import * as " `T.isPrefixOf` T.strip line) lines'
+        
+        -- Verificar se há import direto com o nome
+        hasDirect = any (\line -> 
+                let trimmed = T.strip line
+                in ("import {" `T.isPrefixOf` trimmed || "import { " `T.isPrefixOf` trimmed)
+                   && name `T.isInfixOf` trimmed) lines'
+    in if hasNamespace then "namespace"
+       else if hasDirect then "direct"
+       else "unknown"
 
 -- | Encontra estilos não utilizados em um conjunto de arquivos
-findUnusedStyles :: FilePath -> [FilePath] -> IO [(FilePath, [StyleUsageReport])]
-findUnusedStyles rootDir styleFiles = do
-    reports <- mapM (analyzeStyleFile rootDir) styleFiles
+findUnusedStyles :: FileCache -> FilePath -> [FilePath] -> IO [(FilePath, [StyleUsageReport])]
+findUnusedStyles cache rootDir styleFiles = do
+    reports <- mapM (analyzeStyleFile cache rootDir) styleFiles
     return [(file, filter (not . isUsed) report) | (file, report) <- reports, not (null (filter (not . isUsed) report))]
   where
-    analyzeStyleFile :: FilePath -> FilePath -> IO (FilePath, [StyleUsageReport])
-    analyzeStyleFile root file = do
-        report <- analyzeStyleUsage root file
+    analyzeStyleFile :: FileCache -> FilePath -> FilePath -> IO (FilePath, [StyleUsageReport])
+    analyzeStyleFile c root file = do
+        report <- analyzeStyleUsage c root file
         return (file, report)

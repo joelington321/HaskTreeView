@@ -17,6 +17,7 @@ import qualified Data.Map.Strict as Map
 import Control.Monad (filterM, forM)
 import System.Directory (doesFileExist, listDirectory)
 import Data.Maybe (mapMaybe)
+import FileCache (FileCache, readFromCache, getLines)
 
 -- | Tipo de export
 data ExportType 
@@ -49,16 +50,16 @@ data UnusedExportReport = UnusedExportReport
     } deriving (Show, Eq)
 
 -- | Analisa todos os exports não utilizados em um conjunto de arquivos
-analyzeUnusedExports :: FilePath -> [FilePath] -> IO [UnusedExportReport]
-analyzeUnusedExports rootDir allFiles = do
+analyzeUnusedExports :: FileCache -> FilePath -> [FilePath] -> IO [UnusedExportReport]
+analyzeUnusedExports cache rootDir allFiles = do
     let sourceFiles = filter isSourceFile allFiles
     
     -- Para cada arquivo, extrair seus exports
-    allExportsWithFiles <- mapM extractFileExports sourceFiles
-    let allExports = concat allExportsWithFiles
+    let allExportsWithFiles = map (extractFileExports cache) sourceFiles
+        allExports = concat allExportsWithFiles
     
     -- Para cada export, verificar se é usado em algum lugar
-    reports <- mapM (checkExportUsage rootDir allFiles) allExports
+    reports <- mapM (checkExportUsage cache rootDir allFiles) allExports
     
     -- Retornar apenas os não utilizados
     return $ filter (not . isUsedAnywhere) reports
@@ -74,12 +75,11 @@ isSourceFile path =
        && not (".spec." `T.isInfixOf` T.pack path)
 
 -- | Extrai todos os exports de um arquivo
-extractFileExports :: FilePath -> IO [ExportInfo]
-extractFileExports filePath = do
-    content <- TIO.readFile filePath
-    let linesWithNumbers = zip [1..] (T.lines content)
+extractFileExports :: FileCache -> FilePath -> [ExportInfo]
+extractFileExports cache filePath =
+    let linesWithNumbers = zip [1..] (getLines cache filePath)
         exports = mapMaybe (parseExportLine filePath) linesWithNumbers
-    return exports
+    in exports
 
 -- | Tenta parsear uma linha como export
 parseExportLine :: FilePath -> (Int, Text) -> Maybe ExportInfo
@@ -183,28 +183,28 @@ extractNameAfter prefix line =
     in T.strip name
 
 -- | Encontra todos os exports de um conjunto de arquivos
-findAllExports :: [FilePath] -> IO [ExportInfo]
-findAllExports files = do
+findAllExports :: FileCache -> [FilePath] -> [ExportInfo]
+findAllExports cache files =
     let sourceFiles = filter isSourceFile files
-    allExports <- mapM extractFileExports sourceFiles
-    return $ concat allExports
+        allExports = map (extractFileExports cache) sourceFiles
+    in concat allExports
 
 -- | Verifica se um export é usado em algum lugar
-checkExportUsage :: FilePath -> [FilePath] -> ExportInfo -> IO UnusedExportReport
-checkExportUsage rootDir allFiles exportInfo = do
+checkExportUsage :: FileCache -> FilePath -> [FilePath] -> ExportInfo -> IO UnusedExportReport
+checkExportUsage cache rootDir allFiles exportInfo = do
     let exportFile = sourceFile exportInfo
         name = exportName exportInfo
         otherFiles = filter (/= exportFile) allFiles
     
     -- PRIMEIRO: Verificar se é usado no próprio arquivo
-    usedInOwn <- checkIfUsedInOwnFile exportInfo
+    let usedInOwn = checkIfUsedInOwnFile cache exportInfo
     
     -- SEGUNDO: Encontrar arquivos que importam o arquivo do export
-    importers <- findFilesImporting exportFile otherFiles
+    let importers = findFilesImporting cache exportFile otherFiles
     
     -- TERCEIRO: Verificar se o export específico é usado nesses arquivos
-    usages <- mapM (checkIfExportUsedInFile exportInfo) importers
-    let usedFiles = [f | (f, True) <- usages]
+    let usages = map (checkIfExportUsedInFile cache exportInfo) importers
+        usedFiles = [f | (f, True) <- usages]
     
     return $ UnusedExportReport
         { unusedExportName = name
@@ -216,14 +216,14 @@ checkExportUsage rootDir allFiles exportInfo = do
         }
 
 -- | Verifica se um export é usado no próprio arquivo onde é definido
-checkIfUsedInOwnFile :: ExportInfo -> IO Bool
-checkIfUsedInOwnFile exportInfo = do
+checkIfUsedInOwnFile :: FileCache -> ExportInfo -> Bool
+checkIfUsedInOwnFile cache exportInfo =
     let filePath = sourceFile exportInfo
         name = exportName exportInfo
         exportLineNum = lineNumber exportInfo
-    
-    content <- TIO.readFile filePath
-    let contentLines = T.lines content
+        
+        content = readFromCache cache filePath
+        contentLines = T.lines content
         -- Remover a linha do export para não contar como "uso"
         linesWithNumbers = zip [1..] contentLines
         otherLines = [line | (num, line) <- linesWithNumbers, num /= exportLineNum]
@@ -231,11 +231,11 @@ checkIfUsedInOwnFile exportInfo = do
         eType = exportType exportInfo
     
     -- Verificar diferentes tipos de uso no restante do arquivo
-    return $ checkDirectUsageInContent otherContent name
-          || checkJSXUsage otherContent name
-          || checkFunctionCall otherContent name
-          || checkTypeUsage otherContent name eType
-          || checkClassOrInterfaceUsage otherContent name
+    in checkDirectUsageInContent otherContent name
+       || checkJSXUsage otherContent name
+       || checkFunctionCall otherContent name
+       || checkTypeUsage otherContent name eType
+       || checkClassOrInterfaceUsage otherContent name
   where
     -- Verifica uso direto do nome (não em import/export)
     checkDirectUsageInContent :: Text -> Text -> Bool
@@ -256,46 +256,41 @@ checkIfUsedInOwnFile exportInfo = do
         || ("implements " <> nm) `T.isInfixOf` content
 
 -- | Encontra arquivos que importam um arquivo específico
-findFilesImporting :: FilePath -> [FilePath] -> IO [FilePath]
-findFilesImporting sourceFile allFiles = do
+findFilesImporting :: FileCache -> FilePath -> [FilePath] -> [FilePath]
+findFilesImporting cache sourceFile allFiles =
     -- Encontrar arquivos que importam diretamente
-    directImporters <- filterM (importsFile sourceFile) allFiles
-    
-    -- Encontrar arquivos que fazem re-export
-    reExporters <- findReExporters sourceFile allFiles
-    
-    -- Se houver re-exporters, encontrar quem importa deles também
-    indirectImporters <- if null reExporters
-                        then return []
-                        else do
-                            nested <- mapM (\re -> findFilesImporting re allFiles) reExporters
-                            return $ concat nested
-    
-    -- Combinar e remover duplicatas
-    return $ nubBy (\a b -> a == b) (directImporters ++ reExporters ++ indirectImporters)
+    let directImporters = filter (importsFile cache sourceFile) allFiles
+        
+        -- Encontrar arquivos que fazem re-export
+        reExporters = findReExporters cache sourceFile allFiles
+        
+        -- Se houver re-exporters, encontrar quem importa deles também
+        indirectImporters = if null reExporters
+                            then []
+                            else concatMap (\re -> findFilesImporting cache re allFiles) reExporters
+        
+        -- Combinar e remover duplicatas
+    in nubBy (\a b -> a == b) (directImporters ++ reExporters ++ indirectImporters)
   where
     nubBy :: (a -> a -> Bool) -> [a] -> [a]
     nubBy _ [] = []
     nubBy eq (x:xs) = x : nubBy eq (filter (not . eq x) xs)
 
 -- | Encontra arquivos que fazem re-export de exports de um arquivo
-findReExporters :: FilePath -> [FilePath] -> IO [FilePath]
-findReExporters sourceFile allFiles = do
-    filterM (reExportsFrom sourceFile) allFiles
+findReExporters :: FileCache -> FilePath -> [FilePath] -> [FilePath]
+findReExporters cache sourceFile allFiles =
+    filter (reExportsFrom cache sourceFile) allFiles
 
 -- | Verifica se um arquivo faz re-export de outro
-reExportsFrom :: FilePath -> FilePath -> IO Bool
-reExportsFrom sourceFile targetFile = do
+reExportsFrom :: FileCache -> FilePath -> FilePath -> Bool
+reExportsFrom cache sourceFile targetFile =
     if sourceFile == targetFile
-        then return False
-        else do
-            content <- TIO.readFile targetFile
-            let fileName = T.pack $ getImportableName sourceFile
+        then False
+        else
+            let content = readFromCache cache targetFile
+                fileName = T.pack $ getImportableName sourceFile
                 lines' = T.lines content
-            -- Verificar padrões de re-export:
-            -- export { foo } from './source'
-            -- export * from './source'
-            return $ any (isReExportLine fileName) lines'
+            in any (isReExportLine fileName) lines'
   where
     isReExportLine :: Text -> Text -> Bool
     isReExportLine fname line =
@@ -314,16 +309,16 @@ reExportsFrom sourceFile targetFile = do
            else name
 
 -- | Verifica se um arquivo importa outro
-importsFile :: FilePath -> FilePath -> IO Bool
-importsFile sourceFile targetFile = do
-    content <- TIO.readFile targetFile
-    let fileName = T.pack $ getImportableName sourceFile
+importsFile :: FileCache -> FilePath -> FilePath -> Bool
+importsFile cache sourceFile targetFile =
+    let content = readFromCache cache targetFile
+        fileName = T.pack $ getImportableName sourceFile
         -- Também verificar path alias (@/...)
         fileNameWithAlias = T.pack $ getAliasImportName sourceFile
     -- Verificar se há import do arquivo (direto ou via alias)
-    return $ ("import" `T.isInfixOf` content)
-          && ("from" `T.isInfixOf` content)
-          && (fileName `T.isInfixOf` content || fileNameWithAlias `T.isInfixOf` content)
+    in ("import" `T.isInfixOf` content)
+       && ("from" `T.isInfixOf` content)
+       && (fileName `T.isInfixOf` content || fileNameWithAlias `T.isInfixOf` content)
   where
     -- Extrai o nome "importável" do arquivo (sem extensão)
     getImportableName :: FilePath -> String
@@ -363,20 +358,19 @@ importsFile sourceFile targetFile = do
            else dir : splitPath (tail rest)
 
 -- | Verifica se um export específico é usado em um arquivo
-checkIfExportUsedInFile :: ExportInfo -> FilePath -> IO (FilePath, Bool)
-checkIfExportUsedInFile exportInfo filePath = do
-    content <- TIO.readFile filePath
-    let name = exportName exportInfo
+checkIfExportUsedInFile :: FileCache -> ExportInfo -> FilePath -> (FilePath, Bool)
+checkIfExportUsedInFile cache exportInfo filePath =
+    let content = readFromCache cache filePath
+        name = exportName exportInfo
         eType = exportType exportInfo
-    
-    -- Verificar diferentes tipos de uso
-    let isUsed = checkDirectImport content name
+        
+        -- Verificar diferentes tipos de uso
+        isUsed = checkDirectImport content name
               || checkNamespaceUsage content name
               || checkJSXUsage content name
               || checkFunctionCall content name
               || checkTypeUsage content name eType
-    
-    return (filePath, isUsed)
+    in (filePath, isUsed)
 
 -- | Verifica se há import direto do nome
 checkDirectImport :: Text -> Text -> Bool

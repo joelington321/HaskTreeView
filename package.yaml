@@ -21,6 +21,7 @@ dependencies:
 - aeson-pretty
 - bytestring
 - time
+- async
 
 library:
   source-dirs: src
