@@ -1,14 +1,35 @@
-import React from 'react';
-
 import * as S from './UnusedPanel.styles';
 
 export interface UnusedPanelProps {
   unusedStyles: Array<{ name: string; file: string }>;
   unusedExports: Array<{ name: string; type: string; file: string; canBeInternal?: boolean }>;
+  projectRoot?: string;
 }
 
-export function UnusedPanel({ unusedStyles, unusedExports }: UnusedPanelProps) {
-  const totalIssues = unusedStyles.length + unusedExports.length;
+export function UnusedPanel({ unusedStyles, unusedExports, projectRoot }: UnusedPanelProps) {
+  // Filtrar items que tem file definido
+  const validUnusedStyles = unusedStyles.filter(s => s.file);
+  const validUnusedExports = unusedExports.filter(e => e.file);
+  
+  const totalIssues = validUnusedStyles.length + validUnusedExports.length;
+
+  // Gerar URL do VS Code
+  const getVSCodeUrl = (filePath: string | undefined): string => {
+    if (!filePath) {
+      return '#';
+    }
+    
+    if (!projectRoot) {
+      return `vscode://file/${filePath}`;
+    }
+    
+    // Normalizar barras e construir caminho absoluto
+    const normalizedRoot = projectRoot.replace(/\\/g, '/');
+    const normalizedFile = filePath.replace(/\\/g, '/');
+    const absolutePath = `${normalizedRoot}/${normalizedFile}`;
+    
+    return `vscode://file/${absolutePath}`;
+  };
 
   if (totalIssues === 0) {
     return (
@@ -31,44 +52,62 @@ export function UnusedPanel({ unusedStyles, unusedExports }: UnusedPanelProps) {
       <S.Title>🔎 Análise de Código Não Utilizado</S.Title>
       
       <S.SectionTitle>
-        🎨 Styled Components ({unusedStyles.length})
+        🎨 Styled Components ({validUnusedStyles.length})
       </S.SectionTitle>
-      {unusedStyles.length === 0 ? (
+      {validUnusedStyles.length === 0 ? (
         <S.SuccessMessage>
           ✅ Todos os styled components estão sendo utilizados!
         </S.SuccessMessage>
       ) : (
         <S.List>
-          {unusedStyles.map((s, i) => (
+          {validUnusedStyles.map((s, i) => (
             <S.ListItem key={i}>
-              <S.ItemName>{s.name}</S.ItemName>
-              <S.ItemDetails>em {s.file}</S.ItemDetails>
-              <S.Badge $variant="danger">Não utilizado</S.Badge>
+              <S.ItemContent>
+                <S.ItemName>{s.name}</S.ItemName>
+                <S.ItemDetails>em {s.file}</S.ItemDetails>
+                <S.Badge $variant="danger">Não utilizado</S.Badge>
+              </S.ItemContent>
+              <S.OpenFileButton 
+                href={getVSCodeUrl(s.file)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📝 Abrir
+              </S.OpenFileButton>
             </S.ListItem>
           ))}
         </S.List>
       )}
 
       <S.SectionTitle>
-        📦 Exports (Funções/Constantes/Tipos) ({unusedExports.length})
+        📦 Exports (Funções/Constantes/Tipos) ({validUnusedExports.length})
       </S.SectionTitle>
-      {unusedExports.length === 0 ? (
+      {validUnusedExports.length === 0 ? (
         <S.SuccessMessage>
           ✅ Todos os exports estão sendo utilizados!
         </S.SuccessMessage>
       ) : (
         <S.List>
-          {unusedExports.map((e, i) => (
+          {validUnusedExports.map((e, i) => (
             <S.ListItem key={i}>
-              <S.ItemName>{e.name}</S.ItemName>
-              <S.ItemDetails>
-                {e.type} em {e.file}
-              </S.ItemDetails>
-              {e.canBeInternal ? (
-                <S.Badge $variant="warning">Pode ser interno</S.Badge>
-              ) : (
-                <S.Badge $variant="danger">Não utilizado</S.Badge>
-              )}
+              <S.ItemContent>
+                <S.ItemName>{e.name}</S.ItemName>
+                <S.ItemDetails>
+                  {e.type} em {e.file}
+                </S.ItemDetails>
+                {e.canBeInternal ? (
+                  <S.Badge $variant="warning">Pode ser interno</S.Badge>
+                ) : (
+                  <S.Badge $variant="danger">Não utilizado</S.Badge>
+                )}
+              </S.ItemContent>
+              <S.OpenFileButton 
+                href={getVSCodeUrl(e.file)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📝 Abrir
+              </S.OpenFileButton>
             </S.ListItem>
           ))}
         </S.List>

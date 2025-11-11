@@ -43,10 +43,18 @@ export const ListItem = styled.li`
   border-left: 3px solid #0066cc;
   border-radius: 4px;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 
   &:hover {
     background-color: #252541;
   }
+`;
+
+export const ItemContent = styled.div`
+  flex: 1;
 `;
 
 export const ItemName = styled.span`
@@ -89,6 +97,31 @@ export const Badge = styled.span<{ $variant?: 'warning' | 'info' | 'danger' }>`
         `;
     }
   }}
+`;
+
+export const OpenFileButton = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background-color: #007acc;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #005a9e;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
 export const EmptyState = styled.div`

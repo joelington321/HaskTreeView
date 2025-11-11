@@ -6,7 +6,7 @@ import { getFileName } from '@/utils/helpers';
 /**
  * Interface para opções de desenho de nós
  */
-export interface NodeDrawOptions {
+interface NodeDrawOptions {
   isHighlighted: boolean;
   isHovered: boolean;
 }

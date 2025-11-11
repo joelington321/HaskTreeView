@@ -28,3 +28,29 @@ export const Label = styled.span`
   color: #888;
   font-weight: bold;
 `;
+
+export const OpenInVSCodeButton = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background-color: #007acc;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #005a9e;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;

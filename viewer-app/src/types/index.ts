@@ -8,22 +8,22 @@ export interface DependencyData {
   unusedExports?: UnusedExport[];
 }
 
-export interface FileDependency {
+interface FileDependency {
   fileId: string;
   imports: string[];
   importedBy: string[];
 }
 
-export interface UnusedStyle {
+interface UnusedStyle {
   name: string;
-  file: string;
+  fileId: string;
   importType: string;
 }
 
-export interface UnusedExport {
+interface UnusedExport {
   name: string;
   type: string;
-  file: string;
+  fileId: string;
   canBeInternal: boolean;
 }
 
@@ -90,7 +90,3 @@ export type LayoutType =
   | 'circular'
   | 'radial'
   | 'layered';
-
-export interface LayoutConfig extends CanvasConfig {
-  layoutType: LayoutType;
-}

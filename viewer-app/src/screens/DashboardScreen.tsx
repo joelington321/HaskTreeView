@@ -49,18 +49,25 @@ export function DashboardScreen() {
     loadFromUrl(path);
   };
 
+  // Extrair projectRoot do fileRegistry (sempre em fileRegistry["0"])
+  const projectRoot = data?.fileRegistry?.["0"];
+
   // Extrair dados de unused do JSON carregado
   const unusedStyles = data?.unusedStyles?.map(s => ({
     name: s.name,
-    file: data.fileRegistry[s.file] || s.file,
+    file: data?.fileRegistry?.[s.fileId] || s.fileId,
   })) || [];
 
   const unusedExports = data?.unusedExports?.map(e => ({
     name: e.name,
     type: e.type,
-    file: data.fileRegistry[e.file] || e.file,
+    file: data?.fileRegistry?.[e.fileId] || e.fileId,
     canBeInternal: e.canBeInternal,
   })) || [];
+
+  console.log('Unused Styles:', unusedStyles);
+  console.log('Unused Exports:', unusedExports);
+  console.log('Raw data:', data);
 
   // Mostrar modal de boas-vindas se não houver dados carregados
   if (!data) {
@@ -94,12 +101,16 @@ export function DashboardScreen() {
             config={DEFAULT_CANVAS_CONFIG}
             handlers={handlers}
           />
-          <InfoPanel node={selectedNode} nodes={nodes} />
+          <InfoPanel node={selectedNode} nodes={nodes} projectRoot={projectRoot} />
           <Stats stats={stats} />
           <Legend />
         </>
       ) : (
-        <UnusedPanel unusedStyles={unusedStyles} unusedExports={unusedExports} />
+        <UnusedPanel 
+          unusedStyles={unusedStyles} 
+          unusedExports={unusedExports}
+          projectRoot={projectRoot}
+        />
       )}
     </ScreenContainer>
   );
