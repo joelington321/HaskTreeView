@@ -5,6 +5,7 @@ import { Header, Legend, Stats } from '../components/atoms';
 import { Controls, InfoPanel } from '../components/molecules';
 import { UnusedPanel } from '../components/molecules/UnusedPanel/UnusedPanel';
 import { GraphCanvas } from '../components/organisms';
+import { WelcomeModal } from '../components/organisms/WelcomeModal/WelcomeModal';
 import { DEFAULT_CANVAS_CONFIG } from '../constants';
 import { ScreenContainer } from './DashboardScreen.styles';
 
@@ -14,6 +15,7 @@ export function DashboardScreen() {
   const [viewMode, setViewMode] = useState<'tree' | 'unused'>('tree');
   
   const { 
+    data,
     nodes, 
     connections, 
     stats, 
@@ -39,17 +41,36 @@ export function DashboardScreen() {
     changeLayout(newLayout);
   };
 
-  // MOCK: Substitua por dados reais do JSON
-  const unusedStyles = [
-    { name: 'LegendTest', file: 'Legend.styles.ts' },
-    { name: 'Logo', file: 'Header.styles.ts' },
-    { name: 'NavBar', file: 'Header.styles.ts' },
-  ];
-  const unusedExports = [
-    { name: 'FileDependency', type: 'InterfaceExport', file: 'index.ts', canBeInternal: true },
-    { name: 'NodeDrawOptions', type: 'InterfaceExport', file: 'NodeDrawer.ts', canBeInternal: true },
-    { name: 'LayoutConfig', type: 'InterfaceExport', file: 'index.ts', canBeInternal: false },
-  ];
+  const handleFileSelect = (file: File) => {
+    loadFromFile(file);
+  };
+
+  const handleRecentFileSelect = (path: string) => {
+    loadFromUrl(path);
+  };
+
+  // Extrair dados de unused do JSON carregado
+  const unusedStyles = data?.unusedStyles?.map(s => ({
+    name: s.name,
+    file: data.fileRegistry[s.file] || s.file,
+  })) || [];
+
+  const unusedExports = data?.unusedExports?.map(e => ({
+    name: e.name,
+    type: e.type,
+    file: data.fileRegistry[e.file] || e.file,
+    canBeInternal: e.canBeInternal,
+  })) || [];
+
+  // Mostrar modal de boas-vindas se não houver dados carregados
+  if (!data) {
+    return (
+      <WelcomeModal
+        onFileSelect={handleFileSelect}
+        onRecentFileSelect={handleRecentFileSelect}
+      />
+    );
+  }
 
   return (
     <ScreenContainer>

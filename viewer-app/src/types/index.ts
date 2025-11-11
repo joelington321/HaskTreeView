@@ -4,12 +4,27 @@ export interface DependencyData {
   analyzedAt: string;
   fileRegistry: Record<string, string>;
   dependencies: FileDependency[];
+  unusedStyles?: UnusedStyle[];
+  unusedExports?: UnusedExport[];
 }
 
 export interface FileDependency {
   fileId: string;
   imports: string[];
   importedBy: string[];
+}
+
+export interface UnusedStyle {
+  name: string;
+  file: string;
+  importType: string;
+}
+
+export interface UnusedExport {
+  name: string;
+  type: string;
+  file: string;
+  canBeInternal: boolean;
 }
 
 // Estruturas internas da aplicação
