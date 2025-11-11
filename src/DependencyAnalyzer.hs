@@ -24,6 +24,7 @@ import ImportParser (parseImports, ImportStatement(..), importSource)
 import qualified StyleUsageAnalyzer as Style
 import qualified UnusedExportsAnalyzer as Exports
 import FileCache (FileCache, loadFileCache)
+import Control.Concurrent.Async (mapConcurrently)
 
 -- | Pastas que devem ser ignoradas (sempre externas)
 ignoredPaths :: [String]
@@ -183,9 +184,9 @@ analyzeDependencies rootDir files = do
     let fileRegistry = createRegistry absRootDir absFiles
     let fileToId = createFileToIdMap absFiles
     
-    -- Analisar imports de cada arquivo
+    -- Analisar imports de cada arquivo (PARALELO)
     putStrLn "   - Parseando imports..."
-    fileNodes <- mapM (analyzeFile cache absRootDir fileToId fileRegistry) absFiles
+    fileNodes <- mapConcurrently (analyzeFile cache absRootDir fileToId fileRegistry) absFiles
     
     -- Calcular importedBy
     putStrLn "   - Calculando dependencias reversas..."

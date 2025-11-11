@@ -18,6 +18,7 @@ import Control.Monad (filterM, forM)
 import System.Directory (doesFileExist, listDirectory)
 import Data.Maybe (mapMaybe)
 import FileCache (FileCache, readFromCache, getLines)
+import Control.Concurrent.Async (mapConcurrently)
 
 -- | Tipo de export
 data ExportType 
@@ -58,8 +59,8 @@ analyzeUnusedExports cache rootDir allFiles = do
     let allExportsWithFiles = map (extractFileExports cache) sourceFiles
         allExports = concat allExportsWithFiles
     
-    -- Para cada export, verificar se é usado em algum lugar
-    reports <- mapM (checkExportUsage cache rootDir allFiles) allExports
+    -- Para cada export, verificar se é usado em algum lugar (PARALELO)
+    reports <- mapConcurrently (checkExportUsage cache rootDir allFiles) allExports
     
     -- Retornar apenas os não utilizados
     return $ filter (not . isUsedAnywhere) reports

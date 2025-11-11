@@ -17,6 +17,7 @@ import Control.Monad (filterM, forM)
 import System.Directory (doesFileExist)
 import FileFilter (getFilteredFiles)
 import FileCache (FileCache, readFromCache, getLines)
+import Control.Concurrent.Async (mapConcurrently)
 
 -- | Representa um export de styled-component
 data StyleExport = StyleExport
@@ -44,8 +45,8 @@ analyzeStyleUsage cache rootDir styleFilePath = do
     -- Encontrar arquivos que importam este arquivo de estilos em todo o projeto
     importers <- findImportersInProject cache rootDir styleFilePath
     
-    -- Para cada export, verificar se é usado
-    mapM (checkUsage cache importers) exports
+    -- Para cada export, verificar se é usado (PARALELO)
+    mapConcurrently (checkUsage cache importers) exports
 
 -- | Extrai todos os exports de styled-components de um arquivo
 extractStyleExports :: FileCache -> FilePath -> [StyleExport]
@@ -233,7 +234,8 @@ detectImportType cache filePath export =
 -- | Encontra estilos não utilizados em um conjunto de arquivos
 findUnusedStyles :: FileCache -> FilePath -> [FilePath] -> IO [(FilePath, [StyleUsageReport])]
 findUnusedStyles cache rootDir styleFiles = do
-    reports <- mapM (analyzeStyleFile cache rootDir) styleFiles
+    -- Analisar arquivos em paralelo
+    reports <- mapConcurrently (analyzeStyleFile cache rootDir) styleFiles
     return [(file, filter (not . isUsed) report) | (file, report) <- reports, not (null (filter (not . isUsed) report))]
   where
     analyzeStyleFile :: FileCache -> FilePath -> FilePath -> IO (FilePath, [StyleUsageReport])
