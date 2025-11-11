@@ -174,20 +174,26 @@ analyzeDependencies rootDir files = do
     absFiles <- mapM canonicalizePath files
     
     -- Criar registry (0 = rootPath, 1+ = arquivos, -1- = externos)
+    putStrLn "   - Criando registro de arquivos..."
     let fileRegistry = createRegistry absRootDir absFiles
     let fileToId = createFileToIdMap absFiles
     
     -- Analisar imports de cada arquivo
+    putStrLn "   - Parseando imports..."
     fileNodes <- mapM (analyzeFile absRootDir fileToId fileRegistry) absFiles
     
     -- Calcular importedBy
+    putStrLn "   - Calculando dependencias reversas..."
     let finalNodes = calculateImportedBy fileNodes
     
     -- Analisar estilos não utilizados
     let styleFiles = filter isStyleFile absFiles
+    let styleCount = length styleFiles
+    putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos..."
     unusedStylesList <- analyzeUnusedStyles styleFiles fileToId
     
     -- Analisar exports não utilizados (todos os arquivos)
+    putStrLn "   - Verificando uso de exports..."
     unusedExportsList <- analyzeUnusedExports absRootDir absFiles fileToId
     
     return $ AnalysisResult

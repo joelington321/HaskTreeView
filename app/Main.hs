@@ -1,34 +1,61 @@
 module Main where
 
 import FileFilter (getFilteredFiles)
-import DependencyAnalyzer (analyzeDependencies)
+import DependencyAnalyzer (analyzeDependencies, AnalysisResult(..), FileNode(..))
 import JsonGenerator (saveJsonToFile)
 import System.FilePath ((</>))
+import Text.Printf (printf)
 
 main :: IO ()
 main = do
-  putStrLn "=== HaskTreeView - Analisador de Dependências ==="
+  putStrLn "+==========================================================+"
+  putStrLn "|     HaskTreeView - Analisador de Dependencias v1.0      |"
+  putStrLn "+==========================================================+"
   putStrLn ""
   
   -- Definir diretório de análise
   let testDir = "viewer-app"
       outputFile = "output" </> "dependencies.json"
   
-  putStrLn $ "Analisando diretório: " ++ testDir
-  putStrLn "Ignorando: node_modules, .git, dist, build, .stack-work, vendor, etc."
+  putStrLn "[*] Configuracao:"
+  putStrLn $ "   -> Diretorio: " ++ testDir
+  putStrLn $ "   -> Saida: " ++ outputFile
+  putStrLn "   -> Ignorando: node_modules, .git, dist, build, etc."
   putStrLn ""
   
-  -- Obter todos os arquivos permitidos
+  -- Etapa 1: Buscar arquivos
+  putStrLn "[1/4] Escaneando arquivos..."
   files <- getFilteredFiles testDir
-  putStrLn $ "Arquivos encontrados: " ++ show (length files)
+  let fileCount = length files
+  printf "   [OK] Encontrados: %d arquivos\n" fileCount
   putStrLn ""
   
-  -- Analisar dependências
-  putStrLn "Construindo grafo de dependências..."
+  -- Etapa 2: Analisar dependências
+  putStrLn "[2/4] Analisando dependencias..."
   result <- analyzeDependencies testDir files
-  
-  -- Salvar JSON
-  putStrLn "Gerando JSON..."
-  saveJsonToFile outputFile result
+  putStrLn "   [OK] Grafo de dependencias construido"
   putStrLn ""
-  putStrLn "Análise concluída com sucesso!"
+  
+  -- Etapa 3: Analisar código não utilizado
+  putStrLn "[3/4] Detectando codigo nao utilizado..."
+  let unusedStylesCount = length (unusedStyles result)
+      unusedExportsCount = length (unusedExports result)
+  printf "   [OK] Styled-components nao utilizados: %d\n" unusedStylesCount
+  printf "   [OK] Exports nao utilizados: %d\n" unusedExportsCount
+  putStrLn ""
+  
+  -- Etapa 4: Salvar JSON
+  putStrLn "[4/4] Gerando arquivo JSON..."
+  saveJsonToFile outputFile result
+  putStrLn $ "   [OK] Salvo em: " ++ outputFile
+  putStrLn ""
+  
+  -- Resumo final
+  putStrLn "=========================================================="
+  putStrLn "RESUMO DA ANALISE:"
+  printf "   * Arquivos analisados: %d\n" fileCount
+  printf "   * Dependencias mapeadas: %d\n" (length $ dependencies result)
+  printf "   * Codigo nao utilizado: %d itens\n" (unusedStylesCount + unusedExportsCount)
+  putStrLn "=========================================================="
+  putStrLn "[SUCCESS] Analise concluida com sucesso!"
+  putStrLn "=========================================================="

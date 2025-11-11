@@ -1,5 +1,5 @@
 {
-    "analyzedAt": "2025-11-11T03:34:39Z",
+    "analyzedAt": "2025-11-11T04:16:04Z",
     "dependencies": [
         {
             "fileId": "1",
@@ -51,8 +51,8 @@
             "importedBy": [
                 "6",
                 "27",
-                "41",
-                "46"
+                "45",
+                "50"
             ],
             "imports": []
         },
@@ -210,10 +210,10 @@
                 "30",
                 "31",
                 "36",
-                "38",
-                "41",
-                "43",
-                "46"
+                "40",
+                "45",
+                "47",
+                "50"
             ],
             "imports": []
         },
@@ -241,9 +241,11 @@
             "imports": [
                 "20",
                 "32",
-                "45",
-                "40",
+                "49",
+                "42",
+                "43",
                 "37",
+                "38",
                 "34",
                 "24"
             ]
@@ -258,7 +260,7 @@
         {
             "fileId": "25",
             "importedBy": [
-                "38"
+                "40"
             ],
             "imports": [
                 "26",
@@ -397,17 +399,17 @@
                 "23"
             ],
             "imports": [
+                "40",
                 "38"
             ]
         },
         {
             "fileId": "38",
             "importedBy": [
+                "23",
                 "37"
             ],
             "imports": [
-                "20",
-                "25",
                 "39"
             ]
         },
@@ -421,10 +423,11 @@
         {
             "fileId": "40",
             "importedBy": [
-                "23"
+                "37"
             ],
             "imports": [
-                "43",
+                "20",
+                "25",
                 "41"
             ]
         },
@@ -433,27 +436,25 @@
             "importedBy": [
                 "40"
             ],
-            "imports": [
-                "20",
-                "7",
-                "42"
-            ]
+            "imports": []
         },
         {
             "fileId": "42",
             "importedBy": [
-                "41"
+                "23"
             ],
-            "imports": []
+            "imports": [
+                "47",
+                "45"
+            ]
         },
         {
             "fileId": "43",
             "importedBy": [
-                "40"
+                "23"
             ],
             "imports": [
-                "44",
-                "20"
+                "44"
             ]
         },
         {
@@ -466,11 +467,11 @@
         {
             "fileId": "45",
             "importedBy": [
-                "23"
+                "42"
             ],
             "imports": [
-                "50",
-                "48",
+                "20",
+                "7",
                 "46"
             ]
         },
@@ -479,41 +480,44 @@
             "importedBy": [
                 "45"
             ],
-            "imports": [
-                "20",
-                "7",
-                "47"
-            ]
+            "imports": []
         },
         {
             "fileId": "47",
             "importedBy": [
-                "46"
+                "42"
             ],
-            "imports": []
+            "imports": [
+                "48",
+                "20"
+            ]
         },
         {
             "fileId": "48",
             "importedBy": [
-                "45"
-            ],
-            "imports": [
-                "49"
-            ]
-        },
-        {
-            "fileId": "49",
-            "importedBy": [
-                "48"
+                "47"
             ],
             "imports": []
         },
         {
-            "fileId": "50",
+            "fileId": "49",
             "importedBy": [
-                "45"
+                "23"
             ],
             "imports": [
+                "54",
+                "52",
+                "50"
+            ]
+        },
+        {
+            "fileId": "50",
+            "importedBy": [
+                "49"
+            ],
+            "imports": [
+                "20",
+                "7",
                 "51"
             ]
         },
@@ -521,6 +525,38 @@
             "fileId": "51",
             "importedBy": [
                 "50"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "52",
+            "importedBy": [
+                "49"
+            ],
+            "imports": [
+                "53"
+            ]
+        },
+        {
+            "fileId": "53",
+            "importedBy": [
+                "52"
+            ],
+            "imports": []
+        },
+        {
+            "fileId": "54",
+            "importedBy": [
+                "49"
+            ],
+            "imports": [
+                "55"
+            ]
+        },
+        {
+            "fileId": "55",
+            "importedBy": [
+                "54"
             ],
             "imports": []
         }
@@ -558,61 +594,46 @@
         "35": "src\\constants\\colors.ts",
         "36": "src\\constants\\canvas.ts",
         "37": "src\\components\\organisms\\index.ts",
-        "38": "src\\components\\organisms\\GraphCanvas\\GraphCanvas.tsx",
-        "39": "src\\components\\organisms\\GraphCanvas\\GraphCanvas.styles.ts",
+        "38": "src\\components\\organisms\\WelcomeModal\\WelcomeModal.tsx",
+        "39": "src\\components\\organisms\\WelcomeModal\\WelcomeModal.styles.ts",
         "4": "src\\App.tsx",
-        "40": "src\\components\\molecules\\index.ts",
-        "41": "src\\components\\molecules\\InfoPanel\\InfoPanel.tsx",
-        "42": "src\\components\\molecules\\InfoPanel\\InfoPanel.styles.ts",
-        "43": "src\\components\\molecules\\Controls\\Controls.tsx",
-        "44": "src\\components\\molecules\\Controls\\Controls.styles.ts",
-        "45": "src\\components\\atoms\\index.ts",
-        "46": "src\\components\\atoms\\Stats\\Stats.tsx",
-        "47": "src\\components\\atoms\\Stats\\Stats.styles.ts",
-        "48": "src\\components\\atoms\\Legend\\Legend.tsx",
-        "49": "src\\components\\atoms\\Legend\\Legend.styles.ts",
+        "40": "src\\components\\organisms\\GraphCanvas\\GraphCanvas.tsx",
+        "41": "src\\components\\organisms\\GraphCanvas\\GraphCanvas.styles.ts",
+        "42": "src\\components\\molecules\\index.ts",
+        "43": "src\\components\\molecules\\UnusedPanel\\UnusedPanel.tsx",
+        "44": "src\\components\\molecules\\UnusedPanel\\UnusedPanel.styles.ts",
+        "45": "src\\components\\molecules\\InfoPanel\\InfoPanel.tsx",
+        "46": "src\\components\\molecules\\InfoPanel\\InfoPanel.styles.ts",
+        "47": "src\\components\\molecules\\Controls\\Controls.tsx",
+        "48": "src\\components\\molecules\\Controls\\Controls.styles.ts",
+        "49": "src\\components\\atoms\\index.ts",
         "5": "src\\App.styles.ts",
-        "50": "src\\components\\atoms\\Header\\Header.tsx",
-        "51": "src\\components\\atoms\\Header\\Header.styles.ts",
+        "50": "src\\components\\atoms\\Stats\\Stats.tsx",
+        "51": "src\\components\\atoms\\Stats\\Stats.styles.ts",
+        "52": "src\\components\\atoms\\Legend\\Legend.tsx",
+        "53": "src\\components\\atoms\\Legend\\Legend.styles.ts",
+        "54": "src\\components\\atoms\\Header\\Header.tsx",
+        "55": "src\\components\\atoms\\Header\\Header.styles.ts",
         "6": "src\\utils\\index.ts",
         "7": "src\\utils\\helpers.ts",
         "8": "src\\utils\\cycleDetection.ts",
         "9": "src\\utils\\componentDetection.ts"
     },
     "projectName": "viewer-app",
-    "unusedExports": [
-        {
-            "canBeInternal": true,
-            "fileId": "20",
-            "name": "FileDependency",
-            "type": "InterfaceExport"
-        },
-        {
-            "canBeInternal": false,
-            "fileId": "20",
-            "name": "LayoutConfig",
-            "type": "InterfaceExport"
-        },
-        {
-            "canBeInternal": true,
-            "fileId": "27",
-            "name": "NodeDrawOptions",
-            "type": "InterfaceExport"
-        }
-    ],
+    "unusedExports": [],
     "unusedStyles": [
         {
-            "fileId": "49",
+            "fileId": "53",
             "importType": "none",
             "name": "LegendTest"
         },
         {
-            "fileId": "51",
+            "fileId": "55",
             "importType": "none",
             "name": "Logo"
         },
         {
-            "fileId": "51",
+            "fileId": "55",
             "importType": "none",
             "name": "NavBar"
         }
