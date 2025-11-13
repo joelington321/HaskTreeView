@@ -109,12 +109,19 @@ export class NodeDrawer {
       : UI_CONSTANTS.UNHIGHLIGHTED_OPACITY;
 
     const textColor = node.isCircular ? this.config.nodeCircularColor : '#fff';
-    this.ctx.fillStyle = applyOpacity(textColor, opacity);
     this.ctx.font = `${UI_CONSTANTS.FILE_NAME_FONT_SIZE}px ${UI_CONSTANTS.FONT_FAMILY}`;
     this.ctx.textAlign = 'center';
 
     const fileName = getFileName(node.filePath);
     const y = node.y + this.config.nodeRadius + UI_CONSTANTS.FILE_NAME_VERTICAL_OFFSET;
+
+    // Desenhar borda do texto
+    this.ctx.strokeStyle = applyOpacity('#000', opacity);
+    this.ctx.lineWidth = UI_CONSTANTS.TEXT_STROKE_WIDTH;
+    this.ctx.strokeText(fileName, node.x, y);
+
+    // Desenhar texto preenchido
+    this.ctx.fillStyle = applyOpacity(textColor, opacity);
     this.ctx.fillText(fileName, node.x, y);
   }
 }

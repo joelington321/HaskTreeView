@@ -57,10 +57,13 @@ export const UI_CONSTANTS = {
   COMPONENT_LABEL_VERTICAL_OFFSET: -10,
   
   /** Opacidade de elementos não destacados */
-  UNHIGHLIGHTED_OPACITY: 0.5,
+  UNHIGHLIGHTED_OPACITY: 0.1,
   
   /** Opacidade de elementos destacados */
   HIGHLIGHTED_OPACITY: 1.0,
+  
+  /** Largura da borda do texto dos nomes dos nós */
+  TEXT_STROKE_WIDTH: 1,
   
   /** Limites de zoom */
   ZOOM_MIN: 0.1,
