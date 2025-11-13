@@ -21,6 +21,8 @@ dependencies:
 - aeson-pretty
 - bytestring
 - time
+- async
+- regex-tdfa
 
 library:
   source-dirs: src
