@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GraphNode, LayoutType } from '../types';
 import { useGraphData, useCanvasInteraction } from '../hooks';
 import { Header, Legend, Stats } from '../components/atoms';
@@ -31,6 +31,17 @@ export function DashboardScreen() {
       nodes,
       onNodeClick: setSelectedNode,
     });
+
+  // Reinicializar canvas quando voltar para a view de árvore
+  useEffect(() => {
+    if (viewMode === 'tree') {
+      // Pequeno delay para garantir que o canvas foi montado
+      const timer = setTimeout(() => {
+        resetView();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode, resetView]);
 
   const handleLoadExample = () => {
     loadFromUrl('../output/test-complex.json');

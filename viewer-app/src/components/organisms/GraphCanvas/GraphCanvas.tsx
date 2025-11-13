@@ -32,6 +32,19 @@ export function GraphCanvas({
 }: GraphCanvasProps) {
   const rendererRef = useRef<CanvasRenderer | null>(null);
 
+  // Inicializar o canvas quando o componente é montado
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    // Redimensionar canvas para preencher o container
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+  }, []); // Executar apenas na montagem
+
   // Inicializar o renderer
   useEffect(() => {
     if (!canvasRef.current) return;
