@@ -159,8 +159,8 @@ detectExportType filePath lineNum line
             , sourceFile = filePath
             }
     
-    -- export type Foo
-    | "export type " `T.isPrefixOf` line =
+    -- export type Foo = ...
+    | "export type " `T.isPrefixOf` line && not ("{" `T.isInfixOf` line) =
         let name = extractNameAfter "export type " line
         in Just $ ExportInfo
             { exportName = name
@@ -170,9 +170,20 @@ detectExportType filePath lineNum line
             , sourceFile = filePath
             }
     
-    -- export { foo, bar } - Named exports (mais complexo, pode precisar refinamento)
+    -- export type { Foo, Bar } from '...' - Re-export de tipos
+    | "export type {" `T.isInfixOf` line || "export type { " `T.isInfixOf` line =
+        -- Ignorar re-exports, eles não são exports "próprios" do arquivo
+        Nothing
+    
+    -- export { foo, bar } from '...' - Re-export
+    | ("export {" `T.isPrefixOf` line || "export { " `T.isPrefixOf` line) && "from" `T.isInfixOf` line =
+        -- Ignorar re-exports, eles são apenas "passthrough"
+        Nothing
+    
+    -- export { foo, bar } - Named exports locais
     | "export {" `T.isPrefixOf` line || "export { " `T.isPrefixOf` line =
-        -- Por enquanto ignoramos, mas poderia ser implementado
+        -- Esses exports locais já foram detectados nas suas definições originais
+        -- (export const foo, export function bar, etc)
         Nothing
     
     | otherwise = Nothing

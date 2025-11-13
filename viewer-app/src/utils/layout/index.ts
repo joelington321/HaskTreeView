@@ -2,8 +2,6 @@
  * Barrel export para todos os algoritmos de layout
  */
 
-// Type definitions
-export type { LayoutFunction, LayoutContext, NodePosition, ComponentBounds } from './types';
 
 // Utility functions
 export {
