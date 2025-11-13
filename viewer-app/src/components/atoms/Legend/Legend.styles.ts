@@ -56,6 +56,30 @@ export const LegendLine = styled.div<{ $color: string }>`
   background-color: ${props => props.$color};
 `;
 
+export const LegendDoubleLine = styled.div<{ $color: string }>`
+  width: 30px;
+  height: 8px;
+  margin-right: 10px;
+  position: relative;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: ${props => props.$color};
+  }
+  
+  &::before {
+    top: 0;
+  }
+  
+  &::after {
+    bottom: 0;
+  }
+`;
+
 export const LegendBox = styled.div`
   width: 30px;
   height: 16px;
