@@ -5,9 +5,10 @@ interface SidebarProps {
   viewMode?: 'tree' | 'unused';
   setViewMode?: (mode: 'tree' | 'unused') => void;
   onFileLoad?: (file: File) => void;
+  unusedCount?: number;
 }
 
-export function Sidebar({ viewMode = 'tree', setViewMode, onFileLoad }: SidebarProps) {
+export function Sidebar({ viewMode = 'tree', setViewMode, onFileLoad, unusedCount = 0 }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,6 +55,7 @@ export function Sidebar({ viewMode = 'tree', setViewMode, onFileLoad }: SidebarP
             >
               <S.IconWrapper>🔍</S.IconWrapper>
               {isExpanded && <S.MenuText>Não Utilizados</S.MenuText>}
+              {unusedCount > 0 && <S.Badge>{unusedCount}</S.Badge>}
             </S.MenuItem>
 
             {onFileLoad && (

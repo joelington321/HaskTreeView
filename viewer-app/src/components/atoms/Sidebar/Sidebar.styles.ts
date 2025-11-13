@@ -114,6 +114,35 @@ export const MenuText = styled.span`
   white-space: nowrap;
 `;
 
+export const Badge = styled.span`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 20px;
+  height: 20px;
+  background: #ff3333;
+  opacity: 0.8;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  animation: pulse 2s infinite;
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+`;
+
 export const HiddenFileInput = styled.input`
   display: none;
 `;

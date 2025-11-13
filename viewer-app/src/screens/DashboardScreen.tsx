@@ -76,6 +76,9 @@ export function DashboardScreen() {
   console.log('Unused Exports:', unusedExports);
   console.log('Raw data:', data);
 
+  // Calcular o total de problemas (itens não utilizados)
+  const unusedCount = unusedStyles.length + unusedExports.length;
+
   // Mostrar modal de boas-vindas se não houver dados carregados
   if (!data) {
     return (
@@ -92,6 +95,7 @@ export function DashboardScreen() {
         viewMode={viewMode} 
         setViewMode={setViewMode}
         onFileLoad={loadFromFile}
+        unusedCount={unusedCount}
       />
       <ContentArea>
         {viewMode === 'tree' ? (
