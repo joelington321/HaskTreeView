@@ -24,7 +24,7 @@ import ImportParser (parseImports, ImportStatement(..), importSource)
 import qualified StyleUsageAnalyzer as Style
 import qualified UnusedExportsAnalyzer as Exports
 import FileCache (FileCache, loadFileCache)
-import Control.Concurrent.Async (mapConcurrently)
+import Control.Concurrent.Async (mapConcurrently, concurrently)
 import ImportIndex (ImportIndex, buildImportIndex)
 
 -- | Pastas que devem ser ignoradas (sempre externas)
@@ -197,15 +197,16 @@ analyzeDependencies rootDir files = do
     putStrLn "   - Construindo indice de imports..."
     index <- buildImportIndex cache absFiles
     
-    -- Analisar estilos não utilizados
+    -- Analisar estilos e exports em paralelo (ambos dependem apenas do índice)
     let styleFiles = filter isStyleFile absFiles
     let styleCount = length styleFiles
-    putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos..."
-    unusedStylesList <- analyzeUnusedStyles cache index absRootDir styleFiles fileToId
+    putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos e verificando exports em paralelo..."
     
-    -- Analisar exports não utilizados (todos os arquivos)
-    putStrLn "   - Verificando uso de exports..."
-    unusedExportsList <- analyzeUnusedExports cache index absRootDir absFiles fileToId
+    -- Executar análises em paralelo usando async
+    (unusedStylesList, unusedExportsList) <- 
+        let styleAnalysis = analyzeUnusedStyles cache index absRootDir styleFiles fileToId
+            exportAnalysis = analyzeUnusedExports cache index absRootDir absFiles fileToId
+        in concurrently styleAnalysis exportAnalysis
     
     return $ AnalysisResult
         { projectName = T.pack $ takeFileName absRootDir
