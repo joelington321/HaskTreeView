@@ -69,7 +69,7 @@ export class ConnectionDrawer {
   }
 
   /**
-   * Desenha uma conexão bidirecional (duas setas)
+   * Desenha uma conexão bidirecional (duas linhas paralelas com setas)
    */
   private drawBidirectionalConnection(
     connection: GraphConnection,
@@ -103,19 +103,13 @@ export class ConnectionDrawer {
     const endX = connection.to.x - Math.cos(angle) * this.config.nodeRadius;
     const endY = connection.to.y - Math.sin(angle) * this.config.nodeRadius;
 
-    // Primeira linha
+    // Primeira linha (from -> to, linha superior)
     this.ctx.beginPath();
     this.ctx.moveTo(startX + perpX, startY + perpY);
     this.ctx.lineTo(endX + perpX, endY + perpY);
     this.ctx.stroke();
 
-    // Segunda linha
-    this.ctx.beginPath();
-    this.ctx.moveTo(startX - perpX, startY - perpY);
-    this.ctx.lineTo(endX - perpX, endY - perpY);
-    this.ctx.stroke();
-
-    // Seta 1 (para frente)
+    // Seta da primeira linha (apontando para 'to')
     drawArrow(
       this.ctx,
       endX + perpX,
@@ -125,13 +119,18 @@ export class ConnectionDrawer {
       UI_CONSTANTS.ARROW_SPREAD
     );
 
-    // Seta 2 (para trás)
-    const reverseAngle = angle + Math.PI;
+    // Segunda linha (to -> from, linha inferior)
+    this.ctx.beginPath();
+    this.ctx.moveTo(endX - perpX, endY - perpY);
+    this.ctx.lineTo(startX - perpX, startY - perpY);
+    this.ctx.stroke();
+
+    // Seta da segunda linha (apontando para 'from')
     drawArrow(
       this.ctx,
       startX - perpX,
       startY - perpY,
-      reverseAngle,
+      angle + Math.PI,
       UI_CONSTANTS.ARROW_SIZE_BIDIRECTIONAL,
       UI_CONSTANTS.ARROW_SPREAD
     );
