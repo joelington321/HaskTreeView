@@ -15,30 +15,6 @@ export const Label = styled.label`
   font-size: 14px;
 `;
 
-export const FileInput = styled.input`
-  padding: 8px 15px;
-  background-color: #222;
-  color: #fff;
-  border: 1px solid #444;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &::file-selector-button {
-    background-color: #0066cc;
-    color: #fff;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: background-color 0.3s;
-
-    &:hover {
-      background-color: #0052a3;
-    }
-  }
-`;
-
 export const Button = styled.button`
   padding: 8px 20px;
   background-color: #0066cc;

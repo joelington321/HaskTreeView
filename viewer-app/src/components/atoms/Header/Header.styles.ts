@@ -54,3 +54,29 @@ export const TabButton = styled.button<{ $active: boolean }>`
     transform: translateY(0);
   }
 `;
+
+export const FileButton = styled.button`
+  padding: 8px 20px;
+  background: #228B22;
+  color: #fff;
+  border: 1px solid #32CD32;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #2E8B57;
+    border-color: #3CB371;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+export const HiddenFileInput = styled.input`
+  display: none;
+`;

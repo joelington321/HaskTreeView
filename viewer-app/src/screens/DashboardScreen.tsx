@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GraphNode, LayoutType } from '../types';
 import { useGraphData, useCanvasInteraction } from '../hooks';
-import { Header, Legend, Stats } from '../components/atoms';
+import { Sidebar, Legend, Stats } from '../components/atoms';
 import { Controls, InfoPanel } from '../components/molecules';
 import { UnusedPanel } from '../components/molecules/UnusedPanel/UnusedPanel';
 import { GraphCanvas } from '../components/organisms';
 import { WelcomeModal } from '../components/organisms/WelcomeModal/WelcomeModal';
 import { DEFAULT_CANVAS_CONFIG } from '../constants';
-import { ScreenContainer } from './DashboardScreen.styles';
+import { ScreenContainer, ContentArea } from './DashboardScreen.styles';
 
 export function DashboardScreen() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -32,9 +32,16 @@ export function DashboardScreen() {
       onNodeClick: setSelectedNode,
     });
 
-  const handleLoadExample = () => {
-    loadFromUrl('../output/test-complex.json');
-  };
+  // Reinicializar canvas quando voltar para a view de árvore
+  useEffect(() => {
+    if (viewMode === 'tree') {
+      // Pequeno delay para garantir que o canvas foi montado
+      const timer = setTimeout(() => {
+        resetView();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [viewMode, resetView]);
 
   const handleLayoutChange = (newLayout: LayoutType) => {
     setLayoutType(newLayout);
@@ -69,6 +76,9 @@ export function DashboardScreen() {
   console.log('Unused Exports:', unusedExports);
   console.log('Raw data:', data);
 
+  // Calcular o total de problemas (itens não utilizados)
+  const unusedCount = unusedStyles.length + unusedExports.length;
+
   // Mostrar modal de boas-vindas se não houver dados carregados
   if (!data) {
     return (
@@ -81,37 +91,42 @@ export function DashboardScreen() {
 
   return (
     <ScreenContainer>
-      <Header viewMode={viewMode} setViewMode={setViewMode} />
-      {viewMode === 'tree' ? (
-        <>
-          <Controls
-            onFileLoad={loadFromFile}
-            onReset={resetView}
-            onLoadExample={handleLoadExample}
-            currentLayout={currentLayout}
-            onLayoutChange={handleLayoutChange}
+      <Sidebar 
+        viewMode={viewMode} 
+        setViewMode={setViewMode}
+        onFileLoad={loadFromFile}
+        unusedCount={unusedCount}
+      />
+      <ContentArea>
+        {viewMode === 'tree' ? (
+          <>
+            <Controls
+              onReset={resetView}
+              currentLayout={currentLayout}
+              onLayoutChange={handleLayoutChange}
+            />
+            <GraphCanvas
+              canvasRef={canvasRef}
+              nodes={nodesWithHover}
+              connections={connections}
+              components={components}
+              viewport={viewport}
+              hoveredNodeId={hoveredNodeId}
+              config={DEFAULT_CANVAS_CONFIG}
+              handlers={handlers}
+            />
+            <InfoPanel node={selectedNode} nodes={nodes} projectRoot={projectRoot} />
+            <Stats stats={stats} />
+            <Legend />
+          </>
+        ) : (
+          <UnusedPanel 
+            unusedStyles={unusedStyles} 
+            unusedExports={unusedExports}
+            projectRoot={projectRoot}
           />
-          <GraphCanvas
-            canvasRef={canvasRef}
-            nodes={nodesWithHover}
-            connections={connections}
-            components={components}
-            viewport={viewport}
-            hoveredNodeId={hoveredNodeId}
-            config={DEFAULT_CANVAS_CONFIG}
-            handlers={handlers}
-          />
-          <InfoPanel node={selectedNode} nodes={nodes} projectRoot={projectRoot} />
-          <Stats stats={stats} />
-          <Legend />
-        </>
-      ) : (
-        <UnusedPanel 
-          unusedStyles={unusedStyles} 
-          unusedExports={unusedExports}
-          projectRoot={projectRoot}
-        />
-      )}
+        )}
+      </ContentArea>
     </ScreenContainer>
   );
 }

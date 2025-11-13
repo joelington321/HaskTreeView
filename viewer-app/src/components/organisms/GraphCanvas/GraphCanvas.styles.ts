@@ -3,7 +3,7 @@ import styled from 'styled-components';
 export const CanvasContainer = styled.div`
   position: relative;
   width: 100%;
-  height: calc(100vh - 160px);
+  flex: 1;
   overflow: auto;
   background-color: #000;
 

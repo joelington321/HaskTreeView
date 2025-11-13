@@ -3,7 +3,7 @@ import styled from 'styled-components';
 export const InfoPanelContainer = styled.div`
   position: fixed;
   bottom: 20px;
-  left: 20px;
+  left: 80px; /* Ajustado para considerar a sidebar (60px + 20px de margem) */
   background-color: rgba(17, 17, 17, 0.95);
   border: 1px solid #444;
   border-radius: 8px;

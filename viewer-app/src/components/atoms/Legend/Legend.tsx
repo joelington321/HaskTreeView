@@ -4,7 +4,8 @@ import {
   LegendItem, 
   LegendCircle, 
   LegendSquare, 
-  LegendLine, 
+  LegendLine,
+  LegendDoubleLine, 
   LegendBox 
 } from './Legend.styles';
 
@@ -27,6 +28,10 @@ export function Legend() {
       <LegendItem>
         <LegendLine $color="#fff" />
         <span>Dependência normal</span>
+      </LegendItem>
+      <LegendItem>
+        <LegendDoubleLine $color="#fff" />
+        <span>Dependência bidirecional</span>
       </LegendItem>
       <LegendItem>
         <LegendLine $color="#ff3333" />

@@ -122,13 +122,15 @@ export const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   ${({ $variant = 'primary' }) =>
     $variant === 'primary'
       ? `
-    background-color: #0066cc;
+    background-color: #228B22;
     color: #fff;
+    border: 1px solid #32CD32;
     
     &:hover {
-      background-color: #0077dd;
+      background-color: #2E8B57;
+      border-color: #3CB371;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+      box-shadow: 0 4px 12px rgba(34, 139, 34, 0.4);
     }
   `
       : `

@@ -107,7 +107,7 @@ export function WelcomeModal({ onFileSelect, onRecentFileSelect }: WelcomeModalP
           <S.SectionTitle>📁 Abrir Arquivo</S.SectionTitle>
           <S.ButtonGroup>
             <S.Button $variant="primary" onClick={handleFileClick}>
-              📂 Selecionar JSON
+              📂 Carregar JSON
             </S.Button>
           </S.ButtonGroup>
           <S.HiddenInput

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import * as S from './UnusedPanel.styles';
 
 interface UnusedPanelProps {
@@ -12,6 +13,10 @@ export function UnusedPanel({ unusedStyles, unusedExports, projectRoot }: Unused
   const validUnusedExports = unusedExports.filter(e => e.file);
   
   const totalIssues = validUnusedStyles.length + validUnusedExports.length;
+
+  // Estado para controlar seções abertas/fechadas (começam fechadas se tiverem items)
+  const [stylesOpen, setStylesOpen] = useState(validUnusedStyles.length === 0);
+  const [exportsOpen, setExportsOpen] = useState(validUnusedExports.length === 0);
 
   // Gerar URL do VS Code
   const getVSCodeUrl = (filePath: string | undefined): string => {
@@ -51,66 +56,82 @@ export function UnusedPanel({ unusedStyles, unusedExports, projectRoot }: Unused
     <S.PanelContainer>
       <S.Title>🔎 Análise de Código Não Utilizado</S.Title>
       
-      <S.SectionTitle>
-        🎨 Styled Components ({validUnusedStyles.length})
-      </S.SectionTitle>
-      {validUnusedStyles.length === 0 ? (
-        <S.SuccessMessage>
-          ✅ Todos os styled components estão sendo utilizados!
-        </S.SuccessMessage>
-      ) : (
-        <S.List>
-          {validUnusedStyles.map((s, i) => (
-            <S.ListItem key={i}>
-              <S.ItemContent>
-                <S.ItemName>{s.name}</S.ItemName>
-                <S.ItemDetails>em {s.file}</S.ItemDetails>
-                <S.Badge $variant="danger">Não utilizado</S.Badge>
-              </S.ItemContent>
-              <S.OpenFileButton 
-                href={getVSCodeUrl(s.file)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                📝 Abrir
-              </S.OpenFileButton>
-            </S.ListItem>
-          ))}
-        </S.List>
+      <S.SectionHeader 
+        onClick={() => setStylesOpen(!stylesOpen)}
+        $hasItems={validUnusedStyles.length > 0}
+      >
+        <S.SectionTitle>
+          {stylesOpen ? '▼' : '▶'} 🎨 Styled Components ({validUnusedStyles.length})
+        </S.SectionTitle>
+      </S.SectionHeader>
+      
+      {stylesOpen && (
+        validUnusedStyles.length === 0 ? (
+          <S.SuccessMessage>
+            ✅ Todos os styled components estão sendo utilizados!
+          </S.SuccessMessage>
+        ) : (
+          <S.List>
+            {validUnusedStyles.map((s, i) => (
+              <S.ListItem key={i}>
+                <S.ItemContent>
+                  <S.ItemName>{s.name}</S.ItemName>
+                  <S.ItemDetails>em {s.file}</S.ItemDetails>
+                  <S.Badge $variant="danger">Não utilizado</S.Badge>
+                </S.ItemContent>
+                <S.OpenFileButton 
+                  href={getVSCodeUrl(s.file)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📝 Abrir
+                </S.OpenFileButton>
+              </S.ListItem>
+            ))}
+          </S.List>
+        )
       )}
 
-      <S.SectionTitle>
-        📦 Exports (Funções/Constantes/Tipos) ({validUnusedExports.length})
-      </S.SectionTitle>
-      {validUnusedExports.length === 0 ? (
-        <S.SuccessMessage>
-          ✅ Todos os exports estão sendo utilizados!
-        </S.SuccessMessage>
-      ) : (
-        <S.List>
-          {validUnusedExports.map((e, i) => (
-            <S.ListItem key={i}>
-              <S.ItemContent>
-                <S.ItemName>{e.name}</S.ItemName>
-                <S.ItemDetails>
-                  {e.type} em {e.file}
-                </S.ItemDetails>
-                {e.canBeInternal ? (
-                  <S.Badge $variant="warning">Pode ser interno</S.Badge>
-                ) : (
-                  <S.Badge $variant="danger">Não utilizado</S.Badge>
-                )}
-              </S.ItemContent>
-              <S.OpenFileButton 
-                href={getVSCodeUrl(e.file)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                📝 Abrir
-              </S.OpenFileButton>
-            </S.ListItem>
-          ))}
-        </S.List>
+      <S.SectionHeader 
+        onClick={() => setExportsOpen(!exportsOpen)}
+        $hasItems={validUnusedExports.length > 0}
+      >
+        <S.SectionTitle>
+          {exportsOpen ? '▼' : '▶'} 📦 Exports (Funções/Constantes/Tipos) ({validUnusedExports.length})
+        </S.SectionTitle>
+      </S.SectionHeader>
+      
+      {exportsOpen && (
+        validUnusedExports.length === 0 ? (
+          <S.SuccessMessage>
+            ✅ Todos os exports estão sendo utilizados!
+          </S.SuccessMessage>
+        ) : (
+          <S.List>
+            {validUnusedExports.map((e, i) => (
+              <S.ListItem key={i}>
+                <S.ItemContent>
+                  <S.ItemName>{e.name}</S.ItemName>
+                  <S.ItemDetails>
+                    {e.type} em {e.file}
+                  </S.ItemDetails>
+                  {e.canBeInternal ? (
+                    <S.Badge $variant="warning">Pode ser interno</S.Badge>
+                  ) : (
+                    <S.Badge $variant="danger">Não utilizado</S.Badge>
+                  )}
+                </S.ItemContent>
+                <S.OpenFileButton 
+                  href={getVSCodeUrl(e.file)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📝 Abrir
+                </S.OpenFileButton>
+              </S.ListItem>
+            ))}
+          </S.List>
+        )
       )}
     </S.PanelContainer>
   );

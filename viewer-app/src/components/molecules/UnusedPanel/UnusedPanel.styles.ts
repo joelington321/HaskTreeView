@@ -13,13 +13,37 @@ export const Title = styled.h2`
   color: #0066cc;
 `;
 
+export const SectionHeader = styled.div<{ $hasItems: boolean }>`
+  cursor: ${({ $hasItems }) => ($hasItems ? 'pointer' : 'default')};
+  user-select: none;
+  transition: all 0.2s ease;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.03);
+  
+  ${({ $hasItems }) =>
+    $hasItems &&
+    `
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      transform: translateX(4px);
+    }
+    
+    &:active {
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+  `}
+`;
+
 export const SectionTitle = styled.h3`
   font-size: 18px;
-  margin-top: 32px;
-  margin-bottom: 16px;
+  margin: 0;
   color: #fff;
-  border-bottom: 1px solid #333;
-  padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
 `;
 
 export const SuccessMessage = styled.div`
@@ -28,12 +52,36 @@ export const SuccessMessage = styled.div`
   background-color: rgba(76, 175, 80, 0.1);
   border-radius: 4px;
   margin-bottom: 16px;
+  animation: fadeIn 0.3s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 0 16px 0;
+  animation: fadeIn 0.3s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
 
 export const ListItem = styled.li`
