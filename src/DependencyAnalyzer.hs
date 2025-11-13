@@ -25,6 +25,7 @@ import qualified StyleUsageAnalyzer as Style
 import qualified UnusedExportsAnalyzer as Exports
 import FileCache (FileCache, loadFileCache)
 import Control.Concurrent.Async (mapConcurrently)
+import ImportIndex (ImportIndex, buildImportIndex)
 
 -- | Pastas que devem ser ignoradas (sempre externas)
 ignoredPaths :: [String]
@@ -192,15 +193,19 @@ analyzeDependencies rootDir files = do
     putStrLn "   - Calculando dependencias reversas..."
     let finalNodes = calculateImportedBy fileNodes
     
+    -- Construir índice de imports para buscas rápidas O(1)
+    putStrLn "   - Construindo indice de imports..."
+    index <- buildImportIndex cache absFiles
+    
     -- Analisar estilos não utilizados
     let styleFiles = filter isStyleFile absFiles
     let styleCount = length styleFiles
     putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos..."
-    unusedStylesList <- analyzeUnusedStyles cache absRootDir styleFiles fileToId
+    unusedStylesList <- analyzeUnusedStyles cache index absRootDir styleFiles fileToId
     
     -- Analisar exports não utilizados (todos os arquivos)
     putStrLn "   - Verificando uso de exports..."
-    unusedExportsList <- analyzeUnusedExports cache absRootDir absFiles fileToId
+    unusedExportsList <- analyzeUnusedExports cache index absRootDir absFiles fileToId
     
     return $ AnalysisResult
         { projectName = T.pack $ takeFileName absRootDir
@@ -216,9 +221,9 @@ isStyleFile :: FilePath -> Bool
 isStyleFile path = ".styles.ts" `isSuffixOf` path || ".styles.tsx" `isSuffixOf` path
 
 -- | Analisa estilos não utilizados
-analyzeUnusedStyles :: FileCache -> FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
-analyzeUnusedStyles cache rootDir styleFiles fileToId = do
-    allUnused <- Style.findUnusedStyles cache rootDir styleFiles
+analyzeUnusedStyles :: FileCache -> ImportIndex -> FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedStyle]
+analyzeUnusedStyles cache index rootDir styleFiles fileToId = do
+    allUnused <- Style.findUnusedStyles cache index rootDir styleFiles
     return $ concatMap (convertReports fileToId) allUnused
   where
     convertReports :: Map.Map FilePath Text -> (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]
@@ -233,9 +238,9 @@ analyzeUnusedStyles cache rootDir styleFiles fileToId = do
            ]
 
 -- | Analisa exports não utilizados
-analyzeUnusedExports :: FileCache -> FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedExport]
-analyzeUnusedExports cache rootDir allFiles fileToId = do
-    reports <- Exports.analyzeUnusedExports cache rootDir allFiles
+analyzeUnusedExports :: FileCache -> ImportIndex -> FilePath -> [FilePath] -> Map.Map FilePath Text -> IO [UnusedExport]
+analyzeUnusedExports cache index rootDir allFiles fileToId = do
+    reports <- Exports.analyzeUnusedExports cache index rootDir allFiles
     return $ map (convertReport fileToId) reports
   where
     convertReport :: Map.Map FilePath Text -> Exports.UnusedExportReport -> UnusedExport

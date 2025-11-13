@@ -18,6 +18,7 @@ import System.Directory (doesFileExist)
 import FileFilter (getFilteredFiles)
 import FileCache (FileCache, readFromCache, getLines)
 import Control.Concurrent.Async (mapConcurrently)
+import ImportIndex (ImportIndex, isSymbolUsedInFiles, getFilesUsingSymbol)
 
 -- | Representa um export de styled-component
 data StyleExport = StyleExport
@@ -37,16 +38,13 @@ data StyleUsageReport = StyleUsageReport
     } deriving (Show, Eq)
 
 -- | Analisa o uso de styled-components em um arquivo de estilos
-analyzeStyleUsage :: FileCache -> FilePath -> FilePath -> IO [StyleUsageReport]
-analyzeStyleUsage cache rootDir styleFilePath = do
+analyzeStyleUsage :: FileCache -> ImportIndex -> FilePath -> FilePath -> IO [StyleUsageReport]
+analyzeStyleUsage cache index rootDir styleFilePath = do
     -- Extrair todos os exports do arquivo de estilos
     let exports = extractStyleExports cache styleFilePath
     
-    -- Encontrar arquivos que importam este arquivo de estilos em todo o projeto
-    importers <- findImportersInProject cache rootDir styleFilePath
-    
-    -- Para cada export, verificar se é usado (PARALELO)
-    mapConcurrently (checkUsage cache importers) exports
+    -- Para cada export, verificar uso no índice (busca rápida O(1))
+    mapConcurrently (checkUsageWithIndex index) exports
 
 -- | Extrai todos os exports de styled-components de um arquivo
 extractStyleExports :: FileCache -> FilePath -> [StyleExport]
@@ -148,19 +146,23 @@ isImportPresent content importPath =
        && ("from" `T.isInfixOf` cleanContent)
        && (importPath `T.isInfixOf` cleanContent)
 
--- | Verifica se um export de estilo é usado
-checkUsage :: FileCache -> [FilePath] -> StyleExport -> IO StyleUsageReport
-checkUsage cache importers export = do
-    let usages = map (checkFileUsage cache export) importers
-        usedFiles = [f | (f, True) <- usages]
-    importTypeDetected <- if null usedFiles 
-                          then return "none" 
-                          else return $ detectImportType cache (head usedFiles) export
+-- | Verifica se um export de estilo é usado (usando índice para busca rápida)
+checkUsageWithIndex :: ImportIndex -> StyleExport -> IO StyleUsageReport
+checkUsageWithIndex index export = do
+    let name = exportName export
+        -- Busca O(1) no índice
+        used = isSymbolUsedInFiles index name
+        usedFiles = if used 
+                    then getFilesUsingSymbol index name
+                    else []
+        importTypeDetected = if null usedFiles 
+                             then "none" 
+                             else "indexed"  -- Tipo genérico, pois o índice já detectou uso
     
     return $ StyleUsageReport
-        { styleName = exportName export
+        { styleName = name
         , styleFile = sourceFile export
-        , isUsed = not (null usedFiles)
+        , isUsed = used
         , usedIn = usedFiles
         , importType = importTypeDetected
         }
@@ -232,13 +234,13 @@ detectImportType cache filePath export =
        else "unknown"
 
 -- | Encontra estilos não utilizados em um conjunto de arquivos
-findUnusedStyles :: FileCache -> FilePath -> [FilePath] -> IO [(FilePath, [StyleUsageReport])]
-findUnusedStyles cache rootDir styleFiles = do
+findUnusedStyles :: FileCache -> ImportIndex -> FilePath -> [FilePath] -> IO [(FilePath, [StyleUsageReport])]
+findUnusedStyles cache index rootDir styleFiles = do
     -- Analisar arquivos em paralelo
-    reports <- mapConcurrently (analyzeStyleFile cache rootDir) styleFiles
+    reports <- mapConcurrently (analyzeStyleFile cache index rootDir) styleFiles
     return [(file, filter (not . isUsed) report) | (file, report) <- reports, not (null (filter (not . isUsed) report))]
   where
-    analyzeStyleFile :: FileCache -> FilePath -> FilePath -> IO (FilePath, [StyleUsageReport])
-    analyzeStyleFile c root file = do
-        report <- analyzeStyleUsage c root file
+    analyzeStyleFile :: FileCache -> ImportIndex -> FilePath -> FilePath -> IO (FilePath, [StyleUsageReport])
+    analyzeStyleFile c idx root file = do
+        report <- analyzeStyleUsage c idx root file
         return (file, report)
