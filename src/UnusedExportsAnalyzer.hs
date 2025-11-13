@@ -61,7 +61,7 @@ analyzeUnusedExports cache index rootDir allFiles = do
         allExports = concat allExportsWithFiles
     
     -- Para cada export, verificar uso no índice (busca rápida O(1))
-    reports <- mapConcurrently (checkExportUsageWithIndex cache index) allExports
+    reports <- mapConcurrently (checkExportUsageWithIndexAndFiles cache index allFiles) allExports
     
     -- Retornar apenas os não utilizados
     return $ filter (not . isUsedAnywhere) reports
@@ -192,28 +192,44 @@ findAllExports cache files =
     in concat allExports
 
 -- | Verifica se um export é usado em algum lugar (usando índice para busca rápida)
-checkExportUsageWithIndex :: FileCache -> ImportIndex -> ExportInfo -> IO UnusedExportReport
-checkExportUsageWithIndex cache index exportInfo = do
+checkExportUsageWithIndexAndFiles :: FileCache -> ImportIndex -> [FilePath] -> ExportInfo -> IO UnusedExportReport
+checkExportUsageWithIndexAndFiles cache index allFiles exportInfo = do
     let exportFile = sourceFile exportInfo
         name = exportName exportInfo
+        eType = exportType exportInfo
     
     -- PRIMEIRO: Verificar se é usado no próprio arquivo
     let usedInOwn = checkIfUsedInOwnFile cache exportInfo
     
-    -- SEGUNDO: Buscar no índice (O(1)) se o símbolo é usado
-    let used = isSymbolUsedInFiles index name
-        usedFiles = if used 
-                    then filter (/= exportFile) (getFilesUsingSymbol index name)
-                    else []
+    -- SEGUNDO: Para export default, usar lógica específica
+    (used, usedFiles) <- if eType == DefaultExport
+        then checkDefaultExportUsageInFiles cache exportFile allFiles
+        else do
+            -- Para outros tipos, usar busca no índice
+            let isUsed = isSymbolUsedInFiles index name
+                files = if isUsed 
+                       then filter (/= exportFile) (getFilesUsingSymbol index name)
+                       else []
+            return (isUsed, files)
     
     return $ UnusedExportReport
         { unusedExportName = name
-        , unusedExportType = exportType exportInfo
+        , unusedExportType = eType
         , unusedExportFile = exportFile
-        , isUsedAnywhere = not (null usedFiles)
+        , isUsedAnywhere = used || not (null usedFiles)
         , usedInFiles = usedFiles
         , usedInSameFile = usedInOwn
         }
+
+-- | Verifica se um export default é usado verificando imports do arquivo
+checkDefaultExportUsageInFiles :: FileCache -> FilePath -> [FilePath] -> IO (Bool, [FilePath])
+checkDefaultExportUsageInFiles cache exportFile allFiles = do
+    -- Para export default, verificamos se outros arquivos importam este arquivo
+    let otherFiles = filter (/= exportFile) allFiles
+        importersOfFile = findFilesImporting cache exportFile otherFiles
+        isUsed = not (null importersOfFile)
+    
+    return (isUsed, importersOfFile)
 
 -- | Verifica se um export é usado no próprio arquivo onde é definido
 checkIfUsedInOwnFile :: FileCache -> ExportInfo -> Bool
