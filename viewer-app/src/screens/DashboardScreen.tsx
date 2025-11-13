@@ -43,10 +43,6 @@ export function DashboardScreen() {
     }
   }, [viewMode, resetView]);
 
-  const handleLoadExample = () => {
-    loadFromUrl('../output/test-complex.json');
-  };
-
   const handleLayoutChange = (newLayout: LayoutType) => {
     setLayoutType(newLayout);
     changeLayout(newLayout);
@@ -92,13 +88,15 @@ export function DashboardScreen() {
 
   return (
     <ScreenContainer>
-      <Header viewMode={viewMode} setViewMode={setViewMode} />
+      <Header 
+        viewMode={viewMode} 
+        setViewMode={setViewMode}
+        onFileLoad={loadFromFile}
+      />
       {viewMode === 'tree' ? (
         <>
           <Controls
-            onFileLoad={loadFromFile}
             onReset={resetView}
-            onLoadExample={handleLoadExample}
             currentLayout={currentLayout}
             onLayoutChange={handleLayoutChange}
           />
