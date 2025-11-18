@@ -48,20 +48,27 @@ export class ConnectionDrawer {
       connection.to.y
     );
 
-    const endX = connection.to.x - Math.cos(angle) * this.config.nodeRadius;
-    const endY = connection.to.y - Math.sin(angle) * this.config.nodeRadius;
+    const arrowOffset = UI_CONSTANTS.ARROW_SIZE;
+    const lineGap = arrowOffset * 0.7;
+    const arrowDistance = 2; // distância extra da seta em relação ao nó
+    const startX = connection.from.x + Math.cos(angle) * this.config.nodeRadius;
+    const startY = connection.from.y + Math.sin(angle) * this.config.nodeRadius;
+    const endLineX = connection.to.x - Math.cos(angle) * (this.config.nodeRadius + lineGap);
+    const endLineY = connection.to.y - Math.sin(angle) * (this.config.nodeRadius + lineGap);
+    const endArrowX = connection.to.x - Math.cos(angle) * (this.config.nodeRadius + arrowDistance);
+    const endArrowY = connection.to.y - Math.sin(angle) * (this.config.nodeRadius + arrowDistance);
 
     // Desenhar linha
     this.ctx.beginPath();
-    this.ctx.moveTo(connection.from.x, connection.from.y);
-    this.ctx.lineTo(endX, endY);
+    this.ctx.moveTo(startX, startY);
+    this.ctx.lineTo(endLineX, endLineY);
     this.ctx.stroke();
 
-    // Desenhar seta
+    // Desenhar seta (encostada no nó)
     drawArrow(
       this.ctx,
-      endX,
-      endY,
+      endArrowX,
+      endArrowY,
       angle,
       UI_CONSTANTS.ARROW_SIZE,
       UI_CONSTANTS.ARROW_SPREAD
@@ -98,38 +105,50 @@ export class ConnectionDrawer {
     const perpX = -Math.sin(angle) * spacing;
     const perpY = Math.cos(angle) * spacing;
 
+    const arrowOffset = UI_CONSTANTS.ARROW_SIZE_BIDIRECTIONAL;
+    const lineGap = arrowOffset * 0.7;
+    const arrowDistance = 2;
     const startX = connection.from.x + Math.cos(angle) * this.config.nodeRadius;
     const startY = connection.from.y + Math.sin(angle) * this.config.nodeRadius;
-    const endX = connection.to.x - Math.cos(angle) * this.config.nodeRadius;
-    const endY = connection.to.y - Math.sin(angle) * this.config.nodeRadius;
+    const endLineX = connection.to.x - Math.cos(angle) * (this.config.nodeRadius + lineGap);
+    const endLineY = connection.to.y - Math.sin(angle) * (this.config.nodeRadius + lineGap);
+    const endArrowX = connection.to.x - Math.cos(angle) * (this.config.nodeRadius + arrowDistance);
+    const endArrowY = connection.to.y - Math.sin(angle) * (this.config.nodeRadius + arrowDistance);
 
     // Primeira linha (from -> to, linha superior)
     this.ctx.beginPath();
     this.ctx.moveTo(startX + perpX, startY + perpY);
-    this.ctx.lineTo(endX + perpX, endY + perpY);
+    this.ctx.lineTo(endLineX + perpX, endLineY + perpY);
     this.ctx.stroke();
 
-    // Seta da primeira linha (apontando para 'to')
+    // Seta da primeira linha (apontando para 'to', encostada no nó)
     drawArrow(
       this.ctx,
-      endX + perpX,
-      endY + perpY,
+      endArrowX + perpX,
+      endArrowY + perpY,
       angle,
       UI_CONSTANTS.ARROW_SIZE_BIDIRECTIONAL,
       UI_CONSTANTS.ARROW_SPREAD
     );
 
     // Segunda linha (to -> from, linha inferior)
+    const startXRev = connection.to.x + Math.cos(angle + Math.PI) * this.config.nodeRadius;
+    const startYRev = connection.to.y + Math.sin(angle + Math.PI) * this.config.nodeRadius;
+    const endLineXRev = connection.from.x - Math.cos(angle + Math.PI) * (this.config.nodeRadius + lineGap);
+    const endLineYRev = connection.from.y - Math.sin(angle + Math.PI) * (this.config.nodeRadius + lineGap);
+    const endArrowXRev = connection.from.x - Math.cos(angle + Math.PI) * (this.config.nodeRadius + arrowDistance);
+    const endArrowYRev = connection.from.y - Math.sin(angle + Math.PI) * (this.config.nodeRadius + arrowDistance);
+
     this.ctx.beginPath();
-    this.ctx.moveTo(endX - perpX, endY - perpY);
-    this.ctx.lineTo(startX - perpX, startY - perpY);
+    this.ctx.moveTo(startXRev - perpX, startYRev - perpY);
+    this.ctx.lineTo(endLineXRev - perpX, endLineYRev - perpY);
     this.ctx.stroke();
 
-    // Seta da segunda linha (apontando para 'from')
+    // Seta da segunda linha (apontando para 'from', encostada no nó)
     drawArrow(
       this.ctx,
-      startX - perpX,
-      startY - perpY,
+      endArrowXRev - perpX,
+      endArrowYRev - perpY,
       angle + Math.PI,
       UI_CONSTANTS.ARROW_SIZE_BIDIRECTIONAL,
       UI_CONSTANTS.ARROW_SPREAD
