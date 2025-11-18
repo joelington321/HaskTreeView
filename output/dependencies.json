@@ -1,5 +1,5 @@
 {
-    "analyzedAt": "2025-11-13T00:59:51Z",
+    "analyzedAt": "2025-11-13T01:59:40Z",
     "dependencies": [
         {
             "fileId": "1",
@@ -494,8 +494,8 @@
                 "22"
             ],
             "imports": [
-                "53",
                 "51",
+                "53",
                 "49"
             ]
         },
@@ -598,10 +598,10 @@
         "49": "src\\components\\atoms\\Stats\\Stats.tsx",
         "5": "src\\App.styles.ts",
         "50": "src\\components\\atoms\\Stats\\Stats.styles.ts",
-        "51": "src\\components\\atoms\\Legend\\Legend.tsx",
-        "52": "src\\components\\atoms\\Legend\\Legend.styles.ts",
-        "53": "src\\components\\atoms\\Header\\Header.tsx",
-        "54": "src\\components\\atoms\\Header\\Header.styles.ts",
+        "51": "src\\components\\atoms\\Sidebar\\Sidebar.tsx",
+        "52": "src\\components\\atoms\\Sidebar\\Sidebar.styles.ts",
+        "53": "src\\components\\atoms\\Legend\\Legend.tsx",
+        "54": "src\\components\\atoms\\Legend\\Legend.styles.ts",
         "6": "src\\utils\\index.ts",
         "7": "src\\utils\\helpers.ts",
         "8": "src\\utils\\cycleDetection.ts",
@@ -611,19 +611,9 @@
     "unusedExports": [],
     "unusedStyles": [
         {
-            "fileId": "52",
+            "fileId": "54",
             "importType": "none",
             "name": "LegendTest"
-        },
-        {
-            "fileId": "54",
-            "importType": "none",
-            "name": "Logo"
-        },
-        {
-            "fileId": "54",
-            "importType": "none",
-            "name": "NavBar"
         }
     ]
 }
