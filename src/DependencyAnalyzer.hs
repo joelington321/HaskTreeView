@@ -39,49 +39,115 @@ knownExternalPackages =
     , "zustand", "react-query", "@tanstack", "expo", "metro"
     ]
 
+-- | Tipo de nó no grafo — classifica o papel do arquivo no projeto
+data NodeType
+    = SourceNode    -- Arquivo de código fonte regular
+    | TestNode      -- Arquivo de teste (.spec, .test)
+    | MockNode      -- Arquivo de mock (__mocks__, testMocks)
+    | ConfigNode    -- Arquivo de configuração (vitest, babel, metro, tsconfig, .d.ts)
+    deriving (Show, Eq)
+
+-- | Serializa NodeType para JSON
+nodeTypeToText :: NodeType -> Text
+nodeTypeToText SourceNode = "source"
+nodeTypeToText TestNode   = "test"
+nodeTypeToText MockNode   = "mock"
+nodeTypeToText ConfigNode = "config"
+
+-- | Determina o NodeType de um arquivo pelo seu path
+classifyNode :: FilePath -> NodeType
+classifyNode path
+    | isTestFile path  = TestNode
+    | isMockFile path  = MockNode
+    | isConfigFile path = ConfigNode
+    | otherwise        = SourceNode
+  where
+    isTestFile :: FilePath -> Bool
+    isTestFile p =
+        ".spec.ts"   `isSuffixOf` p || ".spec.tsx"  `isSuffixOf` p ||
+        ".spec.js"   `isSuffixOf` p || ".spec.jsx"  `isSuffixOf` p ||
+        ".test.ts"   `isSuffixOf` p || ".test.tsx"  `isSuffixOf` p ||
+        ".test.js"   `isSuffixOf` p || ".test.jsx"  `isSuffixOf` p
+
+    isMockFile :: FilePath -> Bool
+    isMockFile p =
+        "/__mocks__/"  `isInfixOf` p ||
+        "__mocks__/"   `isPrefixOf` p ||
+        "/testMocks/"  `isInfixOf` p  ||
+        ".mock.ts"     `isSuffixOf` p ||
+        ".mock.tsx"    `isSuffixOf` p ||
+        ".mock.js"     `isSuffixOf` p
+
+    isConfigFile :: FilePath -> Bool
+    isConfigFile p =
+        "vitest.config"   `isInfixOf` p ||
+        "vitest.setup"    `isInfixOf` p ||
+        "babel.config"    `isInfixOf` p ||
+        "metro.config"    `isInfixOf` p ||
+        "jest.config"     `isInfixOf` p ||
+        "webpack.config"  `isInfixOf` p ||
+        "tsconfig"        `isInfixOf` p ||
+        "react-native.config" `isInfixOf` p ||
+        ".d.ts"           `isSuffixOf` p
+
+    isInfixOf :: String -> String -> Bool
+    isInfixOf needle haystack = go haystack
+      where
+        go [] = False
+        go s@(_:rest)
+            | needle `isPrefixOf` s = True
+            | otherwise             = go rest
+
 -- | Nó de arquivo no grafo de dependências
 data FileNode = FileNode
-    { fileId :: Text
-    , imports :: [Text]
+    { fileId     :: Text
+    , nodeType   :: Text      -- "source" | "test" | "mock" | "config"
+    , imports    :: [Text]
     , importedBy :: [Text]
     } deriving (Show, Eq, Generic)
 
-instance ToJSON FileNode
+instance ToJSON FileNode where
+    toJSON fn = object
+        [ "fileId"     .= fileId fn
+        , "nodeType"   .= nodeType fn
+        , "imports"    .= imports fn
+        , "importedBy" .= importedBy fn
+        ]
 
 -- | Informação sobre estilo não utilizado
 data UnusedStyle = UnusedStyle
-    { unusedStyleName :: Text
-    , unusedStyleFileId :: Text  -- Mudado para usar ID
-    , unusedImportType :: Text
+    { unusedStyleName   :: Text
+    , unusedStyleFileId :: Text
+    , unusedImportType  :: Text
     } deriving (Show, Eq, Generic)
 
 instance ToJSON UnusedStyle where
     toJSON us = object
-        [ "name" .= unusedStyleName us
-        , "fileId" .= unusedStyleFileId us
+        [ "name"       .= unusedStyleName us
+        , "fileId"     .= unusedStyleFileId us
         , "importType" .= unusedImportType us
         ]
 
 -- | Informação sobre export não utilizado
 data UnusedExport = UnusedExport
-    { unusedExportName :: Text
-    , unusedExportType :: Text
-    , unusedExportFileId :: Text  -- Mudado para usar ID
-    , canBeInternal :: Bool  -- Novo campo: pode ser convertido para uso interno
+    { unusedExportName   :: Text
+    , unusedExportType   :: Text
+    , unusedExportFileId :: Text
+    , canBeInternal      :: Bool
     } deriving (Show, Eq, Generic)
 
 instance ToJSON UnusedExport where
     toJSON ue = object
-        [ "name" .= unusedExportName ue
-        , "type" .= unusedExportType ue
-        , "fileId" .= unusedExportFileId ue
+        [ "name"          .= unusedExportName ue
+        , "type"          .= unusedExportType ue
+        , "fileId"        .= unusedExportFileId ue
         , "canBeInternal" .= canBeInternal ue
         ]
 
 -- | Resultado completo da análise
 data AnalysisResult = AnalysisResult
-    { projectName :: Text
-    , analyzedAt :: Text
+    { projectName  :: Text
+    , analyzedAt   :: Text
     , fileRegistry :: Map.Map Text Text
     , dependencies :: [FileNode]
     , unusedStyles :: [UnusedStyle]
@@ -90,11 +156,11 @@ data AnalysisResult = AnalysisResult
 
 instance ToJSON AnalysisResult where
     toJSON ar = object
-        [ "projectName" .= projectName ar
-        , "analyzedAt" .= analyzedAt ar
-        , "fileRegistry" .= fileRegistry ar
-        , "dependencies" .= dependencies ar
-        , "unusedStyles" .= unusedStyles ar
+        [ "projectName"   .= projectName ar
+        , "analyzedAt"    .= analyzedAt ar
+        , "fileRegistry"  .= fileRegistry ar
+        , "dependencies"  .= dependencies ar
+        , "unusedStyles"  .= unusedStyles ar
         , "unusedExports" .= unusedExports ar
         ]
 
@@ -106,15 +172,10 @@ containsIgnoredPath path =
 -- | Verifica se um import é externo
 isExternalImport :: String -> Bool
 isExternalImport path = 
-    -- Se contém paths ignorados, é externo
     containsIgnoredPath path
-    -- Se é uma biblioteca conhecida, é externo
     || any (\pkg -> pkg `isPrefixOf` path) knownExternalPackages
-    -- Se começa com @ mas não é path alias do projeto (@/), provavelmente é pacote scoped
     || ("@" `isPrefixOf` path && not ("@/" `isPrefixOf` path) && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path))
-    -- Se é path relativo ou path alias, é interno
     && not ("./" `isPrefixOf` path || "../" `isPrefixOf` path || "@/" `isPrefixOf` path)
-    -- Se começa com diretórios típicos de projeto, é interno
     && not (any (\prefix -> prefix `isPrefixOf` path) ["src/", "screens/", "components/", "services/", "utils/", "hooks/", "store/", "types/", "config/", "common/", "modules/", "assets/", "routes/"])
 
 -- | Resolve import para caminho de arquivo
@@ -127,40 +188,28 @@ resolveImport rootDir currentFile importPath = do
             let currentDir = takeDirectory currentFile
                 extensions = [".ts", ".tsx", ".js", ".jsx", ".css", ".scss", ".sass", ".less", ".styl"]
                 
-            -- Determinar o caminho base
             basePath <- if "./" `isPrefixOf` importStr || "../" `isPrefixOf` importStr
-                then do
-                    -- Path relativo
-                    return $ normalise (currentDir </> importStr)
+                then return $ normalise (currentDir </> importStr)
                 else if "@/" `isPrefixOf` importStr
                 then do
-                    -- Path alias TypeScript: @/ -> src/
-                    let aliasPath = drop 2 importStr  -- Remove "@/"
+                    let aliasPath = drop 2 importStr
                     return $ normalise (rootDir </> "src" </> aliasPath)
                 else do
-                    -- Path absoluto baseado em src/ (preferido) ou root do projeto
                     let srcBasedPath = rootDir </> "src" </> importStr
-                        rootBasedPath = rootDir </> importStr
-                    -- Tentar primeiro com src/, depois com root
                     return $ normalise srcBasedPath
                 
-            -- Tentar resolver arquivo em várias formas:
-            -- 1. Como arquivo direto com extensões
-            let withExt = map (basePath ++) extensions
-            -- 2. Como diretório com /index.{ext}
-                withIndex = map (\ext -> basePath </> "index" ++ ext) extensions
-            -- 3. Como path exato (pode ser sem extensão)
-                allPaths = withExt ++ withIndex ++ [basePath]
+            let withExt    = map (basePath ++) extensions
+                withIndex  = map (\ext -> basePath </> "index" ++ ext) extensions
+                allPaths   = withExt ++ withIndex ++ [basePath]
             
             result <- findFirst allPaths
             case result of
                 Just path -> return $ Just path
                 Nothing -> do
-                    -- Se falhou com src/, tentar com root/
-                    let rootBasePath = rootDir </> importStr
-                        rootWithExt = map (rootBasePath ++) extensions
+                    let rootBasePath  = rootDir </> importStr
+                        rootWithExt   = map (rootBasePath ++) extensions
                         rootWithIndex = map (\ext -> rootBasePath </> "index" ++ ext) extensions
-                        rootAllPaths = rootWithExt ++ rootWithIndex ++ [rootBasePath]
+                        rootAllPaths  = rootWithExt ++ rootWithIndex ++ [rootBasePath]
                     findFirst rootAllPaths
   where
     findFirst [] = return Nothing
@@ -176,44 +225,37 @@ analyzeDependencies rootDir files = do
     absRootDir <- canonicalizePath rootDir
     absFiles <- mapM canonicalizePath files
     
-    -- Carregar todos os arquivos em cache UMA VEZ
     putStrLn "   - Carregando arquivos em cache..."
     cache <- loadFileCache absFiles
     
-    -- Criar registry (0 = rootPath, 1+ = arquivos, -1- = externos)
     putStrLn "   - Criando registro de arquivos..."
     let fileRegistry = createRegistry absRootDir absFiles
     let fileToId = createFileToIdMap absFiles
     
-    -- Analisar imports de cada arquivo (PARALELO)
     putStrLn "   - Parseando imports..."
     fileNodes <- mapConcurrently (analyzeFile cache absRootDir fileToId fileRegistry) absFiles
     
-    -- Calcular importedBy
     putStrLn "   - Calculando dependencias reversas..."
     let finalNodes = calculateImportedBy fileNodes
     
-    -- Construir índice de imports para buscas rápidas O(1)
     putStrLn "   - Construindo indice de imports..."
     index <- buildImportIndex cache absFiles
     
-    -- Analisar estilos e exports em paralelo (ambos dependem apenas do índice)
     let styleFiles = filter isStyleFile absFiles
     let styleCount = length styleFiles
     putStrLn $ "   - Analisando " ++ show styleCount ++ " arquivos de estilos e verificando exports em paralelo..."
     
-    -- Executar análises em paralelo usando async
     (unusedStylesList, unusedExportsList) <- 
-        let styleAnalysis = analyzeUnusedStyles cache index absRootDir styleFiles fileToId
+        let styleAnalysis  = analyzeUnusedStyles cache index absRootDir styleFiles fileToId
             exportAnalysis = analyzeUnusedExports cache index absRootDir absFiles fileToId
         in concurrently styleAnalysis exportAnalysis
     
     return $ AnalysisResult
-        { projectName = T.pack $ takeFileName absRootDir
-        , analyzedAt = "2025-11-11T00:00:00Z"
-        , fileRegistry = fileRegistry
-        , dependencies = finalNodes
-        , unusedStyles = unusedStylesList
+        { projectName   = T.pack $ takeFileName absRootDir
+        , analyzedAt    = "2026-04-13T09:15:02Z"
+        , fileRegistry  = fileRegistry
+        , dependencies  = finalNodes
+        , unusedStyles  = unusedStylesList
         , unusedExports = unusedExportsList
         }
 
@@ -229,11 +271,11 @@ analyzeUnusedStyles cache index rootDir styleFiles fileToId = do
   where
     convertReports :: Map.Map FilePath Text -> (FilePath, [Style.StyleUsageReport]) -> [UnusedStyle]
     convertReports idMap (filePath, reports) =
-        let fileId = Map.findWithDefault "?" filePath idMap
+        let fid = Map.findWithDefault "?" filePath idMap
         in [ UnusedStyle
-                { unusedStyleName = Style.styleName report
-                , unusedStyleFileId = fileId
-                , unusedImportType = Style.importType report
+                { unusedStyleName   = Style.styleName report
+                , unusedStyleFileId = fid
+                , unusedImportType  = Style.importType report
                 }
            | report <- reports
            ]
@@ -247,16 +289,14 @@ analyzeUnusedExports cache index rootDir allFiles fileToId = do
     convertReport :: Map.Map FilePath Text -> Exports.UnusedExportReport -> UnusedExport
     convertReport idMap report = 
         let filePath = Exports.unusedExportFile report
-            fileId = Map.findWithDefault "?" filePath idMap
+            fid      = Map.findWithDefault "?" filePath idMap
         in UnusedExport
-            { unusedExportName = Exports.unusedExportName report
-            , unusedExportType = T.pack $ show (Exports.unusedExportType report)
-            , unusedExportFileId = fileId
-            , canBeInternal = determineIfCanBeInternal report
+            { unusedExportName   = Exports.unusedExportName report
+            , unusedExportType   = T.pack $ show (Exports.unusedExportType report)
+            , unusedExportFileId = fid
+            , canBeInternal      = determineIfCanBeInternal report
             }
     
-    -- Determina se um export pode ser convertido para uso interno
-    -- Critério: usado apenas no próprio arquivo e não usado externamente
     determineIfCanBeInternal :: Exports.UnusedExportReport -> Bool
     determineIfCanBeInternal report =
         Exports.usedInSameFile report && not (Exports.isUsedAnywhere report)
@@ -264,8 +304,8 @@ analyzeUnusedExports cache index rootDir allFiles fileToId = do
 -- | Cria o registry de arquivos
 createRegistry :: FilePath -> [FilePath] -> Map.Map Text Text
 createRegistry rootDir files =
-    let root = Map.singleton "0" (T.pack rootDir)
-        indexed = zip [1..] files
+    let root        = Map.singleton "0" (T.pack rootDir)
+        indexed     = zip [1..] files
         fileEntries = map (\(i, f) -> (T.pack (show i), T.pack (makeRelative rootDir f))) indexed
     in Map.union root (Map.fromList fileEntries)
 
@@ -278,17 +318,17 @@ createFileToIdMap files =
 analyzeFile :: FileCache -> FilePath -> Map.Map FilePath Text -> Map.Map Text Text -> FilePath -> IO FileNode
 analyzeFile cache rootDir fileToId registry filePath = do
     importStmts <- parseImports filePath
-    
-    -- Resolver imports
     resolvedIds <- mapM (resolveToId rootDir fileToId filePath) importStmts
     
-    let myId = fileToId Map.! filePath
+    let myId     = fileToId Map.! filePath
         validIds = [i | Just i <- resolvedIds]
+        nType    = nodeTypeToText (classifyNode filePath)
     
     return $ FileNode
-        { fileId = myId
-        , imports = validIds
-        , importedBy = []  -- Será preenchido depois
+        { fileId     = myId
+        , nodeType   = nType
+        , imports    = validIds
+        , importedBy = []
         }
 
 -- | Resolve import para ID
@@ -298,7 +338,7 @@ resolveToId rootDir fileToId currentFile stmt = do
     resolved <- resolveImport rootDir currentFile impSrc
     case resolved of
         Just absPath -> return $ Map.lookup absPath fileToId
-        Nothing -> return Nothing  -- Ignorar externos por enquanto
+        Nothing      -> return Nothing
 
 -- | Calcula quem importa cada arquivo
 calculateImportedBy :: [FileNode] -> [FileNode]

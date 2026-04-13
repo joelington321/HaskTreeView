@@ -19,33 +19,26 @@ import Control.Concurrent.Async (mapConcurrently)
 
 -- | Estrutura de índice invertido para buscas rápidas
 data ImportIndex = ImportIndex
-    { symbolToFiles :: Map.Map Text (Set FilePath)  -- Símbolo -> Arquivos que o usam
-    , fileToSymbols :: Map.Map FilePath (Set Text)  -- Arquivo -> Símbolos que importa
+    { symbolToFiles :: Map.Map Text (Set FilePath)
+    , fileToSymbols :: Map.Map FilePath (Set Text)
     } deriving (Show, Eq)
 
 -- | Constrói o índice de imports analisando todos os arquivos uma única vez
 buildImportIndex :: FileCache -> [FilePath] -> IO ImportIndex
 buildImportIndex cache allFiles = do
     let jsFiles = filter isJsFile allFiles
-    
-    -- Analisar todos os arquivos em paralelo
     fileSymbolPairs <- mapConcurrently (extractSymbolsFromFile cache) jsFiles
-    
-    -- Construir maps
     let fileToSymbolsMap = Map.fromList fileSymbolPairs
-        
-        -- Inverter: para cada símbolo, listar arquivos que o usam
         symbolToFilesMap = Map.fromListWith Set.union
             [ (symbol, Set.singleton file)
             | (file, symbols) <- fileSymbolPairs
             , symbol <- Set.toList symbols
             ]
-    
     return $ ImportIndex symbolToFilesMap fileToSymbolsMap
 
 -- | Verifica se arquivo é JS/TS válido
 isJsFile :: FilePath -> Bool
-isJsFile path = 
+isJsFile path =
     let ext = takeExtension path
     in ext `elem` [".ts", ".tsx", ".js", ".jsx"]
 
@@ -64,7 +57,6 @@ normalizeMultilineImports (line:rest)
         in joined : normalizeMultilineImports remaining
     | otherwise = line : normalizeMultilineImports rest
   where
-    -- Detecta "import {" sem "}" na mesma linha (import multi-linha)
     isOpenImport :: Text -> Bool
     isOpenImport l =
         let trimmed = T.strip l
@@ -72,7 +64,6 @@ normalizeMultilineImports (line:rest)
            && "{" `T.isInfixOf` trimmed
            && not ("}" `T.isInfixOf` trimmed)
 
-    -- Coleta linhas até encontrar o "}" que fecha o import
     collectUntilClose :: [Text] -> ([Text], [Text])
     collectUntilClose [] = ([], [])
     collectUntilClose (l:ls)
@@ -86,7 +77,6 @@ extractSymbolsFromFile :: FileCache -> FilePath -> IO (FilePath, Set Text)
 extractSymbolsFromFile cache filePath = do
     let content = getLines cache filePath
         -- Juntar imports multi-linha em uma única linha ANTES de processar
-        -- Resolve o caso: import {\n  ax,\n} from './api'
         normalizedLines = normalizeMultilineImports content
         allSymbols = Set.fromList $ concatMap extractSymbolsFromLine normalizedLines
     return (filePath, allSymbols)
@@ -94,20 +84,13 @@ extractSymbolsFromFile cache filePath = do
 -- | Extrai símbolos de uma linha (imports e usos no código)
 extractSymbolsFromLine :: Text -> [Text]
 extractSymbolsFromLine line =
-    let -- Imports nomeados: import { Foo, Bar } from '...'
-        namedImports = extractNamedImports line
-        
-        -- Import default: import Foo from '...'
-        defaultImports = extractDefaultImport line
-        
-        -- Namespace imports: import * as S from '...'
+    let namedImports    = extractNamedImports line
+        defaultImports  = extractDefaultImport line
         namespaceImports = extractNamespaceImport line
-        
-        -- Usos diretos no código (identificadores)
-        -- Buscar padrões como: Foo(...), <Foo, {Foo}, S.Foo, etc
-        identifiers = extractIdentifiersFromCode line
-        
-    in namedImports ++ defaultImports ++ namespaceImports ++ identifiers
+        -- extrair paths de dynamic imports para conectar nós
+        dynamicPaths    = extractDynamicImportPaths line
+        identifiers     = extractIdentifiersFromCode line
+    in namedImports ++ defaultImports ++ namespaceImports ++ dynamicPaths ++ identifiers
 
 -- | Extrai imports nomeados: import { A, B as C } from '...'
 extractNamedImports :: Text -> [Text]
@@ -121,17 +104,17 @@ extractNamedImports line =
                     case T.breakOn "}" afterBrace of
                         (_, "") -> []
                         (imports, _) ->
-                            let cleaned = T.strip $ T.drop 1 imports  -- Remove '{'
-                                parts = T.splitOn "," cleaned
-                                names = map extractImportName parts
+                            let cleaned = T.strip $ T.drop 1 imports
+                                parts   = T.splitOn "," cleaned
+                                names   = map extractImportName parts
                             in filter (not . T.null) names
   where
     extractImportName :: Text -> Text
     extractImportName part =
         let trimmed = T.strip part
         in case T.breakOn " as " trimmed of
-            (original, "") -> trimmed  -- Sem alias
-            (original, alias) -> T.strip $ T.drop 4 alias  -- Com alias, pegar depois do 'as'
+            (original, "") -> trimmed
+            (_, alias)     -> T.strip $ T.drop 4 alias
 
 -- | Extrai import default: import Foo from '...'
 extractDefaultImport :: Text -> [Text]
@@ -143,7 +126,7 @@ extractDefaultImport line =
             in if not (T.isPrefixOf "{" cleaned) && not (T.isPrefixOf "*" cleaned)
                then case T.words cleaned of
                         (name:_) -> [T.takeWhile (/= ',') name]
-                        [] -> []
+                        []       -> []
                else []
 
 -- | Extrai namespace import: import * as S from '...'
@@ -160,29 +143,63 @@ extractNamespaceImport line =
                     in if T.null name then [] else [name]
             else []
 
+-- | Extrai o nome do arquivo de dynamic imports para indexação de conexão.
+-- Detecta: await import('./CardPaidOut') ou import('./Component')
+-- Retorna o basename sem extensão para que o símbolo seja indexado
+-- e a conexão entre spec <-> componente seja estabelecida.
+extractDynamicImportPaths :: Text -> [Text]
+extractDynamicImportPaths line
+    | "import(" `T.isInfixOf` line =
+        case T.splitOn "import(" line of
+            (_:rest:_) ->
+                let inner = T.strip rest
+                    path  = extractQuoted inner
+                in case path of
+                    Just p  -> [takeBaseName p]
+                    Nothing -> []
+            _ -> []
+    | otherwise = []
+  where
+    extractQuoted :: Text -> Maybe Text
+    extractQuoted txt =
+        case T.uncons txt of
+            Just ('\'', rest) -> Just $ T.takeWhile (/= '\'') rest
+            Just ('"',  rest) -> Just $ T.takeWhile (/= '"')  rest
+            _                 -> Nothing
+
+    -- Extrai o basename sem extensão: './CardPaidOut' -> 'CardPaidOut'
+    takeBaseName :: Text -> Text
+    takeBaseName p =
+        let name = last' $ T.splitOn "/" p
+            noExt = T.takeWhile (/= '.') name
+        in noExt
+
+    last' :: [Text] -> Text
+    last' []     = ""
+    last' [x]    = x
+    last' (_:xs) = last' xs
+
 -- | Extrai identificadores usados no código (fora de imports)
 extractIdentifiersFromCode :: Text -> [Text]
 extractIdentifiersFromCode line
-    | "import" `T.isPrefixOf` T.strip line = []  -- Não processar linhas de import
-    | "export" `T.isPrefixOf` T.strip line = []  -- Não processar exports
-    | otherwise = 
-        let tokens = extractAllTokens line
+    | "import" `T.isPrefixOf` T.strip line = []
+    | "export" `T.isPrefixOf` T.strip line = []
+    | otherwise =
+        let tokens   = extractAllTokens line
             validIds = filter isValidIdentifier tokens
         in validIds
   where
-    -- Extrai todos os tokens/identificadores da linha
     extractAllTokens :: Text -> [Text]
     extractAllTokens txt = go txt []
       where
         go t acc
-            | T.null t = reverse acc
+            | T.null t  = reverse acc
             | otherwise =
                 let (token, rest) = extractNextToken t
                 in if T.null token
                    then go (T.tail rest) acc
                    else go rest (token : acc)
-    
-    -- Extrai o próximo token (identificador válido)
+
     extractNextToken :: Text -> (Text, Text)
     extractNextToken t =
         let cleaned = T.dropWhile (not . isIdentifierStart) t
@@ -190,28 +207,25 @@ extractIdentifiersFromCode line
            then ("", t)
            else
                let token = T.takeWhile isIdentifierChar cleaned
-                   rest = T.drop (T.length token) cleaned
+                   rest  = T.drop (T.length token) cleaned
                in (token, rest)
-    
+
     isIdentifierStart :: Char -> Bool
     isIdentifierStart c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_'
-    
+
     isIdentifierChar :: Char -> Bool
     isIdentifierChar c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'
-    
-    -- FIX: Aceitar nomes de qualquer tamanho (corrige "ax", "fs", "id", etc.)
-    -- Antes era: len > 2 (descartava nomes com 1 ou 2 chars)
+
+    -- Aceitar nomes de qualquer tamanho (corrige "ax", "fs", "id", etc.)
     isValidIdentifier :: Text -> Bool
-    isValidIdentifier t = 
-        let len = T.length t
-            firstChar = T.head t
-        in len >= 1
+    isValidIdentifier t =
+        let firstChar = T.head t
+        in not (T.null t)
            && not (isJsKeyword t)
            && (firstChar >= 'A' && firstChar <= 'Z' || firstChar >= 'a' && firstChar <= 'z')
-    
-    -- Palavras-chave comuns de JS/TS que devem ser ignoradas
+
     isJsKeyword :: Text -> Bool
-    isJsKeyword t = t `elem` 
+    isJsKeyword t = t `elem`
         [ "const", "let", "var", "function", "return", "if", "else", "for", "while"
         , "class", "interface", "type", "export", "import", "from", "default"
         , "true", "false", "null", "undefined", "this", "new", "await", "async"
@@ -228,12 +242,12 @@ extractIdentifiersFromCode line
 isSymbolUsedInFiles :: ImportIndex -> Text -> Bool
 isSymbolUsedInFiles index symbol =
     case Map.lookup symbol (symbolToFiles index) of
-        Nothing -> False
+        Nothing    -> False
         Just files -> not (Set.null files)
 
 -- | Retorna lista de arquivos que usam um símbolo
 getFilesUsingSymbol :: ImportIndex -> Text -> [FilePath]
 getFilesUsingSymbol index symbol =
     case Map.lookup symbol (symbolToFiles index) of
-        Nothing -> []
+        Nothing    -> []
         Just files -> Set.toList files
