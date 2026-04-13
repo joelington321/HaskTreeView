@@ -49,11 +49,46 @@ isJsFile path =
     let ext = takeExtension path
     in ext `elem` [".ts", ".tsx", ".js", ".jsx"]
 
+-- | Junta imports multi-linha em uma única linha.
+-- Ex:
+--   import {        <+
+--     ax,           < |-- vira: "import { ax, foo } from './api'"
+--     foo,          < |
+--   } from './api'  <+
+normalizeMultilineImports :: [Text] -> [Text]
+normalizeMultilineImports [] = []
+normalizeMultilineImports (line:rest)
+    | isOpenImport line =
+        let (importLines, remaining) = collectUntilClose rest
+            joined = T.unwords (line : importLines)
+        in joined : normalizeMultilineImports remaining
+    | otherwise = line : normalizeMultilineImports rest
+  where
+    -- Detecta "import {" sem "}" na mesma linha (import multi-linha)
+    isOpenImport :: Text -> Bool
+    isOpenImport l =
+        let trimmed = T.strip l
+        in "import" `T.isPrefixOf` trimmed
+           && "{" `T.isInfixOf` trimmed
+           && not ("}" `T.isInfixOf` trimmed)
+
+    -- Coleta linhas até encontrar o "}" que fecha o import
+    collectUntilClose :: [Text] -> ([Text], [Text])
+    collectUntilClose [] = ([], [])
+    collectUntilClose (l:ls)
+        | "}" `T.isInfixOf` l = ([l], ls)
+        | otherwise =
+            let (more, remaining) = collectUntilClose ls
+            in (l : more, remaining)
+
 -- | Extrai todos os símbolos (imports e usos) de um arquivo
 extractSymbolsFromFile :: FileCache -> FilePath -> IO (FilePath, Set Text)
 extractSymbolsFromFile cache filePath = do
     let content = getLines cache filePath
-        allSymbols = Set.fromList $ concatMap extractSymbolsFromLine content
+        -- Juntar imports multi-linha em uma única linha ANTES de processar
+        -- Resolve o caso: import {\n  ax,\n} from './api'
+        normalizedLines = normalizeMultilineImports content
+        allSymbols = Set.fromList $ concatMap extractSymbolsFromLine normalizedLines
     return (filePath, allSymbols)
 
 -- | Extrai símbolos de uma linha (imports e usos no código)
@@ -131,10 +166,7 @@ extractIdentifiersFromCode line
     | "import" `T.isPrefixOf` T.strip line = []  -- Não processar linhas de import
     | "export" `T.isPrefixOf` T.strip line = []  -- Não processar exports
     | otherwise = 
-        -- Quebrar a linha em tokens considerando diversos delimitadores
-        -- Capturar TODOS os identificadores (PascalCase + camelCase)
         let tokens = extractAllTokens line
-            -- Filtrar identificadores válidos (mais de 2 caracteres, não palavras-chave)
             validIds = filter isValidIdentifier tokens
         in validIds
   where
@@ -147,14 +179,13 @@ extractIdentifiersFromCode line
             | otherwise =
                 let (token, rest) = extractNextToken t
                 in if T.null token
-                   then go (T.tail rest) acc  -- Pular um caractere e continuar
+                   then go (T.tail rest) acc
                    else go rest (token : acc)
     
     -- Extrai o próximo token (identificador válido)
     extractNextToken :: Text -> (Text, Text)
     extractNextToken t =
-        let -- Pular caracteres não-identificadores
-            cleaned = T.dropWhile (not . isIdentifierStart) t
+        let cleaned = T.dropWhile (not . isIdentifierStart) t
         in if T.null cleaned
            then ("", t)
            else
@@ -168,14 +199,15 @@ extractIdentifiersFromCode line
     isIdentifierChar :: Char -> Bool
     isIdentifierChar c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'
     
-    -- Valida se é um identificador que deve ser indexado
+    -- FIX: Aceitar nomes de qualquer tamanho (corrige "ax", "fs", "id", etc.)
+    -- Antes era: len > 2 (descartava nomes com 1 ou 2 chars)
     isValidIdentifier :: Text -> Bool
     isValidIdentifier t = 
         let len = T.length t
             firstChar = T.head t
-        in len > 2  -- Mínimo 3 caracteres
-           && not (isJsKeyword t)  -- Não é palavra-chave JS/TS
-           && (firstChar >= 'A' && firstChar <= 'Z' || firstChar >= 'a' && firstChar <= 'z')  -- Começa com letra
+        in len >= 1
+           && not (isJsKeyword t)
+           && (firstChar >= 'A' && firstChar <= 'Z' || firstChar >= 'a' && firstChar <= 'z')
     
     -- Palavras-chave comuns de JS/TS que devem ser ignoradas
     isJsKeyword :: Text -> Bool
