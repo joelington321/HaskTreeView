@@ -36,3 +36,6 @@ Thumbs.db
 # Arquivos de saída
 *.exe
 *.dmg
+
+# Ignorar arquivos de output
+output/
