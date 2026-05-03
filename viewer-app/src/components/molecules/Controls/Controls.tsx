@@ -1,4 +1,4 @@
-import { ControlsContainer, Label, Button, Select } from './Controls.styles';
+import * as S from './Controls.styles';
 import type { LayoutType } from '../../../types';
 
 interface ControlsProps {
@@ -17,11 +17,11 @@ export function Controls({
   };
 
   return (
-    <ControlsContainer>
-      <Button onClick={onReset}>Resetar Visualização</Button>
+    <S.ControlsContainer>
+      <S.Button onClick={onReset}>Resetar Visualização</S.Button>
       
-      <Label htmlFor="layoutSelect">Layout:</Label>
-      <Select 
+      <S.Label htmlFor="layoutSelect">Layout:</S.Label>
+      <S.Select 
         id="layoutSelect" 
         value={currentLayout} 
         onChange={handleLayoutChange}
@@ -31,7 +31,7 @@ export function Controls({
         <option value="circular">Circular</option>
         <option value="radial">Radial</option>
         <option value="layered">Em Camadas</option>
-      </Select>
-    </ControlsContainer>
+      </S.Select>
+    </S.ControlsContainer>
   );
 }

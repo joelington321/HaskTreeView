@@ -1,6 +1,6 @@
 import { GraphNode } from '@/types';
 import { getFileName } from '@/utils/helpers';
-import { InfoPanelContainer, Title, Text, Label, OpenInVSCodeButton } from './InfoPanel.styles';
+import * as S from './InfoPanel.styles';
 
 interface InfoPanelProps {
   node: GraphNode | null;
@@ -39,27 +39,27 @@ export function InfoPanel({ node, nodes, projectRoot }: InfoPanelProps) {
   };
 
   return (
-    <InfoPanelContainer>
-      <Title $isCircular={node.isCircular}>
+    <S.InfoPanelContainer>
+      <S.Title $isCircular={node.isCircular}>
         Informações do Nó{circularWarning}
-      </Title>
-      <Text>
-        <Label>Arquivo:</Label> {node.filePath}
-      </Text>
-      <Text>
-        <Label>Importa:</Label> {getFileNames(node.imports)}
-      </Text>
-      <Text>
-        <Label>Importado por:</Label> {getFileNames(node.importedBy)}
-      </Text>
+      </S.Title>
+      <S.Text>
+        <S.Label>Arquivo:</S.Label> {node.filePath}
+      </S.Text>
+      <S.Text>
+        <S.Label>Importa:</S.Label> {getFileNames(node.imports)}
+      </S.Text>
+      <S.Text>
+        <S.Label>Importado por:</S.Label> {getFileNames(node.importedBy)}
+      </S.Text>
       
-      <OpenInVSCodeButton 
+      <S.OpenInVSCodeButton 
         href={getVSCodeUrl(node.filePath)}
         target="_blank"
         rel="noopener noreferrer"
       >
         <span>📝</span> Abrir no VS Code
-      </OpenInVSCodeButton>
-    </InfoPanelContainer>
+      </S.OpenInVSCodeButton>
+    </S.InfoPanelContainer>
   );
 }
