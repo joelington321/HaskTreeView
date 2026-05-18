@@ -1,0 +1,14 @@
+{
+  "name": "hasktreeview",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HaskTreeView - Haskell dependency analyzer + Vite viewer",
+  "scripts": {
+    "setup": "stack build && npm --prefix viewer-app install",
+    "analyze": "stack run",
+    "view": "npm --prefix viewer-app run dev",
+    "start": "npm run analyze && npm run view",
+    "build:haskell": "stack build",
+    "build:viewer": "npm --prefix viewer-app run build"
+  }
+}
